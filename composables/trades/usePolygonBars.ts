@@ -2,7 +2,7 @@ import { computed, type Ref } from 'vue'
 import { InstrumentType } from '~/type'
 import type { PolygonBar } from '~/utils/polygonSymbol'
 import { isFuturesSymbol } from '~/utils/polygonSymbol'
-import { listPeriodsInRange, periodKeyToRange } from '~/utils/barCache'
+import { listPeriodsInRange, periodKeyToRange, timestampToPeriodKey } from '~/utils/barCache'
 
 type RthSession = { open: string, close: string, timezone: string }
 
@@ -445,32 +445,57 @@ export const usePolygonBars = (
             return applyRthFilter(filterBarsToDateRange(deduplicateBars(cachedBars), fromStr, toStr), tf)
         }
 
-        // Limit to 3 API requests per call, prioritizing periods closest to the trade entry.
-        const maxFetchRequests = 3
-        const entryDateStr = new Date(trade.openDate).toISOString().split('T')[0]
-        const sortedMissing = [...missingPeriods].sort((a, b) => {
-            const rangeA = periodKeyToRange(tf, a)
-            const rangeB = periodKeyToRange(tf, b)
-            const distA = Math.abs(new Date(rangeA.fromStr + 'T00:00:00Z').getTime() - new Date(entryDateStr + 'T00:00:00Z').getTime())
-            const distB = Math.abs(new Date(rangeB.fromStr + 'T00:00:00Z').getTime() - new Date(entryDateStr + 'T00:00:00Z').getTime())
-            return distA - distB
-        })
-        const periodsToFetch = sortedMissing.slice(0, maxFetchRequests)
+        // 1 seule requête API pour toute la plage manquante (au lieu de 3 requêtes par période).
+        // Si la plage est trop large (estimation > SAFE_BAR_LIMIT), on splitte par période.
+        const SAFE_BAR_LIMIT = 40000
+        const tfMinutes = Number(tf)
+        const rangeMs = new Date(toStr + 'T00:00:00Z').getTime() - new Date(fromStr + 'T00:00:00Z').getTime()
+        const tradingHoursPerDay = trade.instrumentType === InstrumentType.Stock
+            || trade.instrumentType === InstrumentType.Option
+            ? 6.5
+            : trade.instrumentType === InstrumentType.Future
+                ? 24 * 5 / 7
+                : 24
+        const estimatedBars = Math.ceil((rangeMs / (24 * 60 * 60 * 1000)) * tradingHoursPerDay * 60 / tfMinutes)
 
-        // Fetch each missing period individually to stay under Polygon's 500 result limit.
+        const userStore = useUserStore()
         const allFetchedBars: PolygonBar[] = []
-        for (const pk of periodsToFetch) {
-            const userStore = useUserStore()
+
+        if (estimatedBars > SAFE_BAR_LIMIT) {
+            // Splitter par période pour rester sous la limite de Polygon (50000).
+            for (const pk of missingPeriods) {
+                userStore.polygonRequestCount++
+                const { fromStr: periodFrom, toStr: periodTo } = periodKeyToRange(tf, pk)
+                const { bars: periodBars } = isFutures.value
+                    ? await fetchFuturesBars(ticker, tf, periodFrom, periodTo, apiKey)
+                    : await fetchStandardBars(ticker, tf, periodFrom, periodTo, apiKey)
+                await setCachedPeriod(cacheTicker, tf, pk, periodBars)
+                allFetchedBars.push(...periodBars)
+            }
+        } else {
+            // 1 seule requête pour toute la plage.
             userStore.polygonRequestCount++
-            const { fromStr: periodFrom, toStr: periodTo } = periodKeyToRange(tf, pk)
-            const { bars: periodBars } = isFutures.value
-                ? await fetchFuturesBars(ticker, tf, periodFrom, periodTo, apiKey)
-                : await fetchStandardBars(ticker, tf, periodFrom, periodTo, apiKey)
-            await setCachedPeriod(cacheTicker, tf, pk, periodBars)
-            allFetchedBars.push(...periodBars)
+            const { bars: fetchedBars } = isFutures.value
+                ? await fetchFuturesBars(ticker, tf, fromStr, toStr, apiKey)
+                : await fetchStandardBars(ticker, tf, fromStr, toStr, apiKey)
+
+            // Splitter les bougies fetchées en périodes de cache (semaines ou mois).
+            const barsByPeriod = new Map<string, PolygonBar[]>()
+            for (const bar of fetchedBars) {
+                const pk = timestampToPeriodKey(tf, bar.time)
+                const arr = barsByPeriod.get(pk)
+                if (arr) arr.push(bar)
+                else barsByPeriod.set(pk, [bar])
+            }
+            // Mettre en cache chaque période reçue. Les périodes manquantes sans bougies
+            // (ex. jours fériés, week-end) sont stockées vides pour éviter un re-fetch.
+            for (const pk of missingPeriods) {
+                await setCachedPeriod(cacheTicker, tf, pk, barsByPeriod.get(pk) ?? [])
+            }
+            allFetchedBars.push(...fetchedBars)
         }
 
-        // Combine cached + freshly fetched bars.
+        // Combiner cached + freshly fetched.
         const combinedBars = deduplicateBars([...cachedBars, ...allFetchedBars])
         return applyRthFilter(filterBarsToDateRange(combinedBars, fromStr, toStr), tf)
     }
