@@ -1,6 +1,6 @@
 [package]
 name = "pnltracker-desktop"
-version = "0.1.1"
+version = "0.1.2"
 description = "PnlTracker desktop application"
 authors = ["PnlTracker"]
 license = ""
