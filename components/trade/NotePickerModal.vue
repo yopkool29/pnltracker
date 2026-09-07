@@ -76,9 +76,9 @@
         </template>
         <template #footer>
             <div class="action-buttons-end px-4 py-3">
-                <UButton :label="$t('common.actions.cancel')" color="neutral" variant="ghost" @click="open = false" />
                 <UButton :label="$t('components.trade.notePicker.associate')" color="primary" :disabled="!selectedNote"
                     @click="onAssociate" />
+                <UButton :label="$t('common.actions.cancel')" color="neutral" variant="ghost" @click="open = false" />
             </div>
         </template>
     </UModal>

@@ -7,7 +7,7 @@ export const useNotesPanel = () => {
 	const { success: toastSuccess } = useAppToast()
 	const { t } = useI18n()
 	const dbStateStore = useDbStateStore()
-	const { uploadContext, cleanupOrphanImages, cleanupTmpImages, finalizeImages, deleteNoteImages } = useNoteImages()
+	const { uploadContext, cleanupOrphanImages, cleanupTmpImages, finalizeImages, deleteNoteImages, uploadBlobImages } = useNoteImages()
 
 	const loading = ref(false)
 	const noteDates = ref<NoteType[]>([])
@@ -209,12 +209,15 @@ export const useNotesPanel = () => {
 		if (!selectedNote.value) return
 		try {
 			const noteContent = getContent().trim()
-			const noteData = { date: selectedNote.value.date, content: noteContent, subtitle: noteSubtitle.value }
 			if (noteContent) {
+				const processedContent = await uploadBlobImages(noteContent)
+				const noteData = { date: selectedNote.value.date, content: processedContent, subtitle: noteSubtitle.value }
 				const savedNote = selectedNote.value.id ? await updateNote(selectedNote.value.id, noteData) : await saveNoteToApi(noteData)
 				if (savedNote) {
-					const finalContent = await finalizeImages(savedNote.id!, noteContent)
+					const finalContent = await finalizeImages(savedNote.id!, processedContent)
+
 					await cleanupOrphanImages(savedContent.value, finalContent)
+
 					if (finalContent !== noteContent) {
 						await updateNote(savedNote.id!, { content: finalContent })
 						savedNote.content = finalContent
@@ -235,17 +238,18 @@ export const useNotesPanel = () => {
 					}, 500)
 					await loadNotes()
 					toastSuccess(t('components.notes_panel.toast.save_success_title'), t('components.notes_panel.toast.save_success_desc'))
-					emit?.('save', { date: savedNote.date, note: noteContent })
+					emit?.('save', { date: savedNote.date, note: finalContent })
 				}
 			} else if (selectedNote.value.id) {
 				await cleanupOrphanImages(savedContent.value, '')
 				const success = await deleteNote(selectedNote.value.id)
 				if (success) {
+					const noteDate = selectedNote.value.date
 					selectedNote.value = null
 					setContent('')
 					await loadNotes()
 					toastSuccess(t('components.notes_panel.toast.delete_success_title'), t('components.notes_panel.toast.delete_success_desc'))
-					emit?.('save', { date: noteData.date, note: '' })
+					emit?.('save', { date: noteDate, note: '' })
 				}
 			}
 		} catch (err) {
