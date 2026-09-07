@@ -60,11 +60,11 @@
             </div>
 
             <div class="flex gap-3">
-                <UButton size="lg" color="neutral" variant="outline" block @click="handleCancel">
-                    {{ $t('common.actions.cancel') }}
-                </UButton>
                 <UButton size="lg" color="primary" block :disabled="!selectedDatabaseId" :loading="isSelecting" @click="handleSelectDatabase">
                     {{ $t('pages.select_database.continue') }}
+                </UButton>
+                <UButton size="lg" color="neutral" variant="outline" block @click="handleCancel">
+                    {{ $t('common.actions.cancel') }}
                 </UButton>
             </div>
 

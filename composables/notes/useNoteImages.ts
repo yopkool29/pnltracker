@@ -7,17 +7,18 @@ const extractNtImages = (content: string): string[] => {
 	}
 	const results = new Set<string>()
 
-	// Match images with .../nt_xxx pattern (works for both /path/ and ?path=.../)
+	// Match images with .../nt_xxx or .../tmp_nt_xxx pattern (works for both /path/ and ?path=.../)
 	// Gère aussi les titles markdown optionnels : ![caption](url "title")
-	const mdRegex = /!\[[^\]]*\]\([^)]*\/(nt_[^)&\s"']+)(?:\s+"[^"]*")?\)/g
+	const mdRegex = /!\[[^\]]*\]\([^)]*\/(tmp_)?(nt_[^)&\s"']+)(?:\s+"[^"]*")?\)/g
 	for (const match of decoded.matchAll(mdRegex)) {
-		results.add(match[1])
+		// Inclure le préfixe tmp_ si présent pour matcher le filename exact
+		results.add(match[1] ? `${match[1]}${match[2]}` : match[2])
 	}
 
 	// Fallback : images en HTML (Milkdown peut générer <img> pour les image blocks avec caption)
-	const htmlRegex = /<img[^>]*src="[^"]*\/(nt_[^"&\s]+)"/g
+	const htmlRegex = /<img[^>]*src="[^"]*\/(tmp_)?(nt_[^"&\s]+)"/g
 	for (const match of decoded.matchAll(htmlRegex)) {
-		results.add(match[1])
+		results.add(match[1] ? `${match[1]}${match[2]}` : match[2])
 	}
 
 	return Array.from(results)
@@ -33,6 +34,30 @@ export const useNoteImages = () => {
 		if (!userId || !dbName) return undefined
 		return { userId, dbName }
 	})
+
+	const normalizeImageUrl = (url: string) => {
+		const match = url.match(/\/screenshots\/([^&\s]+)/)
+		return match ? `/api/image?path=screenshots/${match[1]}` : url
+	}
+
+	const fileToDataUrl = (file: Blob): Promise<string> => new Promise((resolve, reject) => {
+		const reader = new FileReader()
+		reader.onload = () => resolve(reader.result as string)
+		reader.onerror = reject
+		reader.readAsDataURL(file)
+	})
+
+	const uploadFile = async (file: File): Promise<string> => {
+		if (!uploadContext.value) return fileToDataUrl(file)
+
+		const formData = new FormData()
+		formData.append('image', file)
+		const result = await $fetch<{ url: string }>('/api/notes/images/upload', {
+			method: 'POST',
+			body: formData,
+		})
+		return normalizeImageUrl(result.url)
+	}
 
 	const cleanupOrphanImages = async (oldContent: string, newContent: string) => {
 		if (!uploadContext.value) return
@@ -105,17 +130,8 @@ export const useNoteImages = () => {
 				const blob = await response.blob()
 				const file = new File([blob], 'image.png', { type: blob.type })
 
-				// Re-upload to get a new filename
-				const formData = new FormData()
-				formData.append('image', file)
-
-				const result = await $fetch<{ url: string }>('/api/notes/images/upload', {
-					method: 'POST',
-					body: formData,
-				})
-
-				// Replace the old URL with the new one
-				newContent = newContent.replace(fullMatch, fullMatch.replace(imageUrl, result.url))
+				const newUrl = await uploadFile(file)
+				newContent = newContent.replace(fullMatch, fullMatch.replace(imageUrl, newUrl))
 			} catch (error) {
 				console.warn('Failed to duplicate image:', imageUrl, error)
 				// Continue with other images even if one fails
@@ -138,30 +154,39 @@ export const useNoteImages = () => {
 		}
 	}
 
-	// Upload une image et retourne l'URL normalisée
-	const uploadImage = async (file: File): Promise<string> => {
-		if (!uploadContext.value) {
-			// Fallback: convert to base64
-			return new Promise<string>((resolve, reject) => {
-				const reader = new FileReader()
-				reader.onload = () => resolve(reader.result as string)
-				reader.onerror = reject
-				reader.readAsDataURL(file)
-			})
+	const uploadImage = async (file: File): Promise<string> => uploadFile(file)
+
+	// Convertit les blob: URLs du contenu en images uploadées sur le serveur
+	// Retourne le contenu avec les URLs blob: remplacées par /api/image?path=screenshots/tmp_nt_xxx
+	const uploadBlobImages = async (content: string): Promise<string> => {
+		if (!uploadContext.value || !content.includes('blob:')) return content
+
+		const blobRegex = /!\[[^\]]*\]\((blob:[^)]+)\)/g
+		const matches = [...content.matchAll(blobRegex)]
+		if (matches.length === 0) return content
+
+		let newContent = content
+		for (const match of matches) {
+			const fullMatch = match[0]
+			const blobUrl = match[1]
+
+			try {
+				const response = await fetch(blobUrl)
+				if (!response.ok) {
+					console.warn('[uploadBlobImages] fetch failed for', blobUrl, response.status)
+					continue
+				}
+				const blob = await response.blob()
+				const file = new File([blob], 'image.png', { type: blob.type || 'image/png' })
+
+				const finalUrl = await uploadFile(file)
+				newContent = newContent.replace(fullMatch, fullMatch.replace(blobUrl, finalUrl))
+			} catch (error) {
+				console.warn('[uploadBlobImages] failed for', blobUrl, error)
+			}
 		}
-		const formData = new FormData()
-		formData.append('image', file)
-		const result = await $fetch<{ url: string }>('/api/notes/images/upload', {
-			method: 'POST',
-			body: formData,
-		})
-		// Normaliser l'URL au format screenshots/filename pour la portabilité
-		const match = result.url.match(/\/screenshots\/([^&\s]+)/)
-		if (match) {
-			return `/api/image?path=screenshots/${match[1]}`
-		}
-		return result.url
+		return newContent
 	}
 
-	return { uploadContext, cleanupOrphanImages, cleanupTmpImages, finalizeImages, duplicateImages, deleteNoteImages, uploadImage }
+	return { uploadContext, cleanupOrphanImages, cleanupTmpImages, finalizeImages, duplicateImages, deleteNoteImages, uploadImage, extractNtImages, uploadBlobImages }
 }

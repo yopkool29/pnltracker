@@ -171,8 +171,8 @@
         </template>
         <template #footer>
             <div class="action-buttons-end">
-                <UButton :label="$t('common.actions.cancel')" color="neutral" variant="ghost" @click="showCreateModal = false" />
                 <UButton type="submit" form="createNoteForm" :label="$t('common.actions.create')" color="primary" />
+                <UButton :label="$t('common.actions.cancel')" color="neutral" variant="ghost" @click="showCreateModal = false" />
             </div>
         </template>
     </CommonModalDefault>
@@ -193,8 +193,8 @@
         </template>
         <template #footer>
             <div class="action-buttons-end">
-                <UButton :label="$t('common.actions.cancel')" color="neutral" variant="ghost" @click="showChangeDateTimeModal = false" />
                 <UButton type="submit" form="changeDateTimeForm" :label="$t('common.actions.update')" color="primary" />
+                <UButton :label="$t('common.actions.cancel')" color="neutral" variant="ghost" @click="showChangeDateTimeModal = false" />
             </div>
         </template>
     </CommonModalDefault>

@@ -1,6 +1,5 @@
 import { createReadStream } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { dirname, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import { stat } from 'node:fs/promises'
 import { createAppError } from '../../utils/errors'
 import auth from '../../utils/auth'
@@ -30,9 +29,16 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        const __dirname = dirname(fileURLToPath(import.meta.url))
-        const userUploadDir = resolve(__dirname, '../../upload', `user_${userId}_data`, dbName)
+        const userUploadDir = resolve(process.cwd(), 'upload', `user_${userId}_data`, dbName)
         const filePath = resolve(userUploadDir, imagePath)
+
+        if (!filePath.startsWith(`${userUploadDir}/`)) {
+            throw createAppError({
+                statusCode: 400,
+                message: 'Invalid image path',
+                tag: 'api.image.get.invalid_path'
+            })
+        }
 
         const stats = await stat(filePath)
         if (!stats.isFile()) {
