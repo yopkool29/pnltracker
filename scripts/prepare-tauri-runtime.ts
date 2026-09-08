@@ -185,7 +185,9 @@ const prepareApp = async () => {
 		// npm install échoue sur Windows avec ETARGET pour des packages internes
 		// (string-width-cjs, etc.) qui n'existent pas sur le registry.
 		const serverNodeModules = join(serverDir, 'node_modules')
-		await mkdir(serverNodeModules, { recursive: true })
+		if (!await fileExists(serverNodeModules)) {
+			await mkdir(serverNodeModules, { recursive: true })
+		}
 		console.log(`Copying ${packages.size} external packages from root node_modules...`)
 		for (const [pkgName] of packages) {
 			const src = join(rootDir, 'node_modules', pkgName)
