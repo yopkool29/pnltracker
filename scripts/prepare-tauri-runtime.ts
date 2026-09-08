@@ -188,13 +188,23 @@ const prepareApp = async () => {
 		console.log(`Installing ${packages.size} external packages...`)
 		await execFileAsync('npm', ['install', '--omit=dev', '--ignore-scripts', '--prefer-offline', '--legacy-peer-deps', '--prefix', serverDir], { shell: true, maxBuffer: 10 * 1024 * 1024 })
 		// 3b. Les peer dependencies ne sont pas installées avec --legacy-peer-deps.
-		// Les collecter depuis les packages installés et les ajouter au package.json, puis réinstaller.
+		// Les copier directement depuis node_modules racine au lieu de refaire npm install.
 		const peerPackages = await collectPeerDependencies(serverDir)
 		if (peerPackages.size > 0) {
-			console.log(`Adding ${peerPackages.size} peer dependencies...`)
+			console.log(`Copying ${peerPackages.size} peer dependencies from root node_modules...`)
 			await addPeerDependenciesToPackageJson(serverDir, peerPackages)
-			console.log(`Reinstalling with peer dependencies...`)
-			await execFileAsync('npm', ['install', '--omit=dev', '--ignore-scripts', '--prefer-offline', '--legacy-peer-deps', '--prefix', serverDir], { shell: true, maxBuffer: 10 * 1024 * 1024 })
+			const serverNodeModules = join(serverDir, 'node_modules')
+			for (const [peerName] of peerPackages) {
+				const src = join(rootDir, 'node_modules', peerName)
+				const dest = join(serverNodeModules, peerName)
+				if (await fileExists(dest)) continue
+				try {
+					await robustCp(src, dest)
+					console.log(`  copied ${peerName}`)
+				} catch {
+					console.warn(`  could not copy ${peerName}, skipping`)
+				}
+			}
 		}
 		// 4. Réécrire les chemins absolus en chemins relatifs ./node_modules/
 		await rewriteAbsolutePaths(serverDir, absolutePrefix)
