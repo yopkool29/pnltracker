@@ -221,6 +221,8 @@ const extractExternalPackages = async (serverDir: string, absolutePrefix: string
 	const files = await readdir(serverDir, { recursive: true })
 	for (const file of files) {
 		if (!file.endsWith('.mjs')) continue
+		// Ignorer les fichiers dans node_modules (dépendances déjà installées)
+		if (file.includes('node_modules')) continue
 		const content = await readFile(join(serverDir, file), 'utf8')
 		let match
 		while ((match = packageRegex.exec(content)) !== null) {
