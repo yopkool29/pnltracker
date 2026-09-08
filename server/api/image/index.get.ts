@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
         const userUploadDir = resolve(process.cwd(), 'upload', `user_${userId}_data`, dbName)
         const filePath = resolve(userUploadDir, imagePath)
 
-        if (!filePath.startsWith(`${userUploadDir}/`)) {
+        if (!filePath.startsWith(userUploadDir) || filePath === userUploadDir) {
             throw createAppError({
                 statusCode: 400,
                 message: 'Invalid image path',

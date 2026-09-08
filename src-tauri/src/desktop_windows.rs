@@ -202,7 +202,7 @@ fn sync_runtime(source_dir: &Path, data_dir: &Path) -> DesktopResult<()> {
 	] {
 		let target = data_dir.join(name);
 		if target.exists() {
-			fs::remove_dir_all(&target)?;
+			robust_remove_dir_all(&target)?;
 		}
 		copy_dir(&source_dir.join(name), &target)?;
 	}
@@ -210,7 +210,7 @@ fn sync_runtime(source_dir: &Path, data_dir: &Path) -> DesktopResult<()> {
 	let pg_install_source = source_dir.join("postgres").join("install");
 	let pg_install_target = data_dir.join("postgres").join("install");
 	if pg_install_target.exists() {
-		fs::remove_dir_all(&pg_install_target)?;
+		robust_remove_dir_all(&pg_install_target)?;
 	}
 	copy_dir(&pg_install_source, &pg_install_target)?;
 	fs::copy(
@@ -254,6 +254,8 @@ fn start_postgres(data_dir: &Path, config: &DesktopConfig) -> DesktopResult<Wind
 			.arg("-U")
 			.arg(&pg.username)
 			.arg("--auth=trust")
+			.arg("--encoding=UTF8")
+			.arg("--locale=C")
 			.stdout(Stdio::inherit())
 			.stderr(Stdio::inherit())
 			.status()?;
@@ -262,7 +264,7 @@ fn start_postgres(data_dir: &Path, config: &DesktopConfig) -> DesktopResult<Wind
 		}
 	}
 
-	// Configurer le mot de passe
+	// Configurer le mot de passe et forcer UTF-8
 	let conf_path = data_dir_pg.join("postgresql.conf");
 	let mut conf = fs::read_to_string(&conf_path)?;
 	if !conf.contains("listen_addresses") {
@@ -271,6 +273,8 @@ fn start_postgres(data_dir: &Path, config: &DesktopConfig) -> DesktopResult<Wind
 	if !conf.contains(&format!("port = {}", pg.port)) {
 		conf.push_str(&format!("\nport = {}\n", pg.port));
 	}
+	// Forcer client_encoding en UTF-8 pour éviter les erreurs WIN1252
+	conf.push_str("\nclient_encoding = 'UTF8'\n");
 	fs::write(&conf_path, conf)?;
 
 	// Démarrer PostgreSQL avec pg_ctl

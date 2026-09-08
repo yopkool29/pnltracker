@@ -180,6 +180,39 @@ pub fn ensure_admin_user(pg: &dyn PostgresHandle, config: &DesktopConfig, data_d
 	Ok(())
 }
 
+// Suppression robuste d'un dossier — sur Windows, fs::remove_dir_all échoue souvent
+// avec EPERM/Access denied à cause de handles ouverts (antivirus, IDE, indexer).
+// cmd /c rmdir /s /q est plus robuste sur Windows.
+pub fn robust_remove_dir_all(path: &Path) -> DesktopResult<()> {
+	#[cfg(target_os = "windows")]
+	{
+		use std::os::windows::process::CommandExt;
+		const CREATE_NO_WINDOW: u32 = 0x08000000;
+		let status = std::process::Command::new("cmd")
+			.args(["/c", "rmdir", "/s", "/q"])
+			.arg(path)
+			.creation_flags(CREATE_NO_WINDOW)
+			.stdout(Stdio::null())
+			.stderr(Stdio::null())
+			.status();
+		// rmdir /s /q retourne 0 si succès, ou un code d'erreur si le dossier n'existe pas.
+		// On ignore l'erreur si le dossier n'existe pas ou est verrouillé.
+		if let Ok(s) = status {
+			if !s.success() && path.exists() {
+				// Le dossier existe encore — essayer fs::remove_dir_all en fallback
+				fs::remove_dir_all(path)?;
+			}
+		} else if path.exists() {
+			fs::remove_dir_all(path)?;
+		}
+	}
+	#[cfg(not(target_os = "windows"))]
+	{
+		fs::remove_dir_all(path)?;
+	}
+	Ok(())
+}
+
 pub fn copy_dir(source: &Path, target: &Path) -> DesktopResult<()> {
 	fs::create_dir_all(target)?;
 	for entry in fs::read_dir(source)? {
