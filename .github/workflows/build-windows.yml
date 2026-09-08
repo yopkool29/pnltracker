@@ -50,11 +50,13 @@ jobs:
           pnpm prisma generate --schema=prisma/data/schema.prisma
 
       - name: Build Nuxt + prepare Tauri runtime
+        timeout-minutes: 15
         run: pnpm tauri:prepare
         env:
           PRISMA_ENGINES_MIRROR: 'https://binaries.prisma.sh'
 
       - name: Build Tauri (MSI + NSIS)
+        timeout-minutes: 15
         run: pnpm tauri build --features desktop-production --config src-tauri/tauri.prod.conf.json --bundles msi,nsis
         env:
           PRISMA_ENGINES_MIRROR: 'https://binaries.prisma.sh'
