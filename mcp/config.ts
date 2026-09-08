@@ -12,8 +12,14 @@ const McpConfigSchema = z.object({
 
 export type McpConfig = z.output<typeof McpConfigSchema>
 
-const MCP_PORT_FILE = join(homedir(), '.local', 'share', 'app.pnltracker.desktop', 'mcp-port')
-const MCP_TOKEN_FILE = join(homedir(), '.local', 'share', 'app.pnltracker.desktop', 'mcp-token')
+// Chemin du data dir de l'app Tauri : %APPDATA%\app.pnltracker.desktop sur Windows,
+// ~/.local/share/app.pnltracker.desktop sur Linux.
+const appDataDir = process.platform === 'win32'
+	? join(process.env.APPDATA || join(homedir(), 'AppData', 'Roaming'), 'app.pnltracker.desktop')
+	: join(homedir(), '.local', 'share', 'app.pnltracker.desktop')
+
+const MCP_PORT_FILE = join(appDataDir, 'mcp-port')
+const MCP_TOKEN_FILE = join(appDataDir, 'mcp-token')
 
 // Lire le port dynamique écrit par l'app Tauri
 export const readDynamicPort = (): string | null => {
