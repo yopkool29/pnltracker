@@ -185,6 +185,7 @@ const prepareApp = async () => {
 		// 2. Générer un package.json avec ces packages et leurs versions
 		await generateServerPackageJson(serverDir, packages)
 		// 3. Installer les dépendances (npm install --omit=dev --prefer-offline --ignore-scripts)
+		console.log(`Installing ${packages.size} external packages...`)
 		await execFileAsync('npm', ['install', '--omit=dev', '--ignore-scripts', '--prefer-offline', '--legacy-peer-deps', '--prefix', serverDir], { shell: true, maxBuffer: 10 * 1024 * 1024 })
 		// 3b. Les peer dependencies ne sont pas installées avec --legacy-peer-deps.
 		// Les collecter depuis les packages installés et les ajouter au package.json, puis réinstaller.
@@ -192,6 +193,7 @@ const prepareApp = async () => {
 		if (peerPackages.size > 0) {
 			console.log(`Adding ${peerPackages.size} peer dependencies...`)
 			await addPeerDependenciesToPackageJson(serverDir, peerPackages)
+			console.log(`Reinstalling with peer dependencies...`)
 			await execFileAsync('npm', ['install', '--omit=dev', '--ignore-scripts', '--prefer-offline', '--legacy-peer-deps', '--prefix', serverDir], { shell: true, maxBuffer: 10 * 1024 * 1024 })
 		}
 		// 4. Réécrire les chemins absolus en chemins relatifs ./node_modules/
