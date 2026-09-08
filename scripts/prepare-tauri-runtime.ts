@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { createReadStream } from 'node:fs'
-import { chmod, cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { access, chmod, cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve } from 'node:path'
 import { execFile, spawn } from 'node:child_process'
@@ -145,7 +145,7 @@ const preparePostgres = async () => {
 
 const fileExists = async (path: string): Promise<boolean> => {
 	try {
-		await readFile(path)
+		await access(path)
 		return true
 	} catch {
 		return false
