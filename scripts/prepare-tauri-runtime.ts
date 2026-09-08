@@ -184,23 +184,32 @@ const prepareApp = async () => {
 		const packages = await extractExternalPackages(serverDir, absolutePrefix)
 		// 2. Générer un package.json avec ces packages et leurs versions
 		await generateServerPackageJson(serverDir, packages)
-		// 3. Installer les dépendances (npm install --omit=dev --prefer-offline --ignore-scripts)
-		console.log(`Installing ${packages.size} external packages...`)
-		await execFileAsync('npm', ['install', '--omit=dev', '--ignore-scripts', '--prefer-offline', '--legacy-peer-deps', '--prefix', serverDir], { shell: true, maxBuffer: 10 * 1024 * 1024 })
-		// 3b. Les peer dependencies ne sont pas installées avec --legacy-peer-deps.
-		// Les copier directement depuis node_modules racine au lieu de refaire npm install.
+		// 3. Copier les dépendances depuis node_modules racine au lieu de npm install.
+		// npm install échoue sur Windows avec ETARGET pour des packages internes
+		// (string-width-cjs, etc.) qui n'existent pas sur le registry.
+		console.log(`Copying ${packages.size} external packages from root node_modules...`)
+		const serverNodeModules = join(serverDir, 'node_modules')
+		for (const [pkgName] of packages) {
+			const src = join(rootDir, 'node_modules', pkgName)
+			const dest = join(serverNodeModules, pkgName)
+			if (await fileExists(dest)) continue
+			try {
+				await robustCp(src, dest)
+			} catch {
+				console.warn(`  could not copy ${pkgName}, skipping`)
+			}
+		}
+		// 3b. Copier aussi les peer dependencies depuis node_modules racine.
 		const peerPackages = await collectPeerDependencies(serverDir)
 		if (peerPackages.size > 0) {
 			console.log(`Copying ${peerPackages.size} peer dependencies from root node_modules...`)
 			await addPeerDependenciesToPackageJson(serverDir, peerPackages)
-			const serverNodeModules = join(serverDir, 'node_modules')
 			for (const [peerName] of peerPackages) {
 				const src = join(rootDir, 'node_modules', peerName)
 				const dest = join(serverNodeModules, peerName)
 				if (await fileExists(dest)) continue
 				try {
 					await robustCp(src, dest)
-					console.log(`  copied ${peerName}`)
 				} catch {
 					console.warn(`  could not copy ${peerName}, skipping`)
 				}
@@ -255,32 +264,6 @@ const extractExternalPackages = async (serverDir: string, absolutePrefix: string
 			result.set(pkg, pkgJson.version)
 		} catch {
 			// Package non trouvé à la racine, peut-être imbriqué — on l'ignore
-		}
-	}
-	// Collecter aussi les transitive dependencies pour éviter que npm essaie
-	// de les résoudre depuis le registry (où des versions peuvent ne pas exister).
-	const toVisit = [...result.keys()]
-	const visited = new Set<string>(result.keys())
-	while (toVisit.length > 0) {
-		const pkg = toVisit.pop()!
-		try {
-			const pkgJsonPath = join(rootDir, 'node_modules', pkg, 'package.json')
-			const pkgJson = JSON.parse(await readFile(pkgJsonPath, 'utf8'))
-			if (!pkgJson.dependencies) continue
-			for (const depName of Object.keys(pkgJson.dependencies)) {
-				if (visited.has(depName)) continue
-				try {
-					const depPkgPath = join(rootDir, 'node_modules', depName, 'package.json')
-					const depPkg = JSON.parse(await readFile(depPkgPath, 'utf8'))
-					result.set(depName, depPkg.version)
-					visited.add(depName)
-					toVisit.push(depName)
-				} catch {
-					// dep non trouvé dans node_modules racine — on l'ignore
-				}
-			}
-		} catch {
-			// package.json illisible — on ignore
 		}
 	}
 	return result
