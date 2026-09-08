@@ -51,11 +51,8 @@ const robustRm = async (target: string) => {
 
 // Sur Windows, cp de node:fs peut échouer avec EPERM. robocopy gère les locks correctement.
 const robustCp = async (src: string, dest: string) => {
-	if (isWindows) {
-		await execIgnoreStderr('robocopy', [src, dest, '/E', '/NFL', '/NDL', '/NJH', '/NJS', '/NP'], {}, [0, 1, 2, 3, 4, 5, 6, 7])
-	} else {
-		await cp(src, dest, { recursive: true, dereference: true })
-	}
+	// Utiliser fs.cp de Node.js qui gère les symlinks et est plus fiable que robocopy sur Windows.
+	await cp(src, dest, { recursive: true, dereference: true, force: true })
 }
 
 const nodeArchive = isWindows
@@ -187,16 +184,17 @@ const prepareApp = async () => {
 		// 3. Copier les dépendances depuis node_modules racine au lieu de npm install.
 		// npm install échoue sur Windows avec ETARGET pour des packages internes
 		// (string-width-cjs, etc.) qui n'existent pas sur le registry.
-		console.log(`Copying ${packages.size} external packages from root node_modules...`)
 		const serverNodeModules = join(serverDir, 'node_modules')
+		await mkdir(serverNodeModules, { recursive: true })
+		console.log(`Copying ${packages.size} external packages from root node_modules...`)
 		for (const [pkgName] of packages) {
 			const src = join(rootDir, 'node_modules', pkgName)
 			const dest = join(serverNodeModules, pkgName)
 			if (await fileExists(dest)) continue
 			try {
 				await robustCp(src, dest)
-			} catch {
-				console.warn(`  could not copy ${pkgName}, skipping`)
+			} catch (e) {
+				console.warn(`  could not copy ${pkgName}: ${e instanceof Error ? e.message : 'error'}, skipping`)
 			}
 		}
 		// 3b. Copier aussi les peer dependencies depuis node_modules racine.
@@ -358,9 +356,28 @@ const addPeerDependenciesToPackageJson = async (serverDir: string, peerPackages:
 // La profondeur relative dépend de l'emplacement du fichier (index.mjs est à la racine,
 // chunks/_/nitro.mjs est 2 niveaux plus profond).
 const rewriteAbsolutePaths = async (serverDir: string, absolutePrefix: string) => {
-	const files = await readdir(serverDir, { recursive: true })
+	// Scan manuel récursif qui skip node_modules pour éviter EPERM sur Windows.
+	const scanDir = async (dir: string, relBase: string): Promise<string[]> => {
+		const results: string[] = []
+		let entries: import('node:fs').Dirent[]
+		try {
+			entries = await readdir(dir, { withFileTypes: true })
+		} catch {
+			return results
+		}
+		for (const entry of entries) {
+			const rel = relBase ? `${relBase}/${entry.name}` : entry.name
+			if (entry.isDirectory()) {
+				if (entry.name === 'node_modules') continue
+				results.push(...await scanDir(join(dir, entry.name), rel))
+			} else if (entry.name.endsWith('.mjs')) {
+				results.push(rel)
+			}
+		}
+		return results
+	}
+	const files = await scanDir(serverDir, '')
 	for (const file of files) {
-		if (!file.endsWith('.mjs')) continue
 		const filePath = join(serverDir, file)
 		// Calculer la profondeur : index.mjs -> 0, chunks/x.mjs -> 1, chunks/_/x.mjs -> 2
 		// readdir recursive utilise \ sur Windows et / sur Linux — normaliser
