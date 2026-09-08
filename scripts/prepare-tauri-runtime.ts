@@ -218,22 +218,34 @@ const extractExternalPackages = async (serverDir: string, absolutePrefix: string
 	const nodeModulesPrefix = `${absolutePrefix}/node_modules/`
 	const packageRegex = /file:\/\/[^'"]*\/node_modules\/(@[^/'"]+\/[^/'"]+|[^/'"]+)/g
 	const packages = new Set<string>()
-	const files = await readdir(serverDir, { recursive: true })
-	for (const file of files) {
-		if (!file.endsWith('.mjs')) continue
-		// Ignorer les fichiers dans node_modules (dépendances déjà installées)
-		if (file.includes('node_modules')) continue
-		const content = await readFile(join(serverDir, file), 'utf8')
-		let match
-		while ((match = packageRegex.exec(content)) !== null) {
-			// Pour les chemins imbriqués comme nuxt/node_modules/perfect-debounce,
-			// on prend le premier segment de package
-			packages.add(match[1])
-			// Aussi extraire les packages imbriqués (nuxt/node_modules/X -> X)
-			const nestedMatch = content.match(new RegExp(`${nodeModulesPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^'"]*?/node_modules/(@[^/'"]+\\/[^/'"]+|[^/'"]+)`))
-			if (nestedMatch) packages.add(nestedMatch[1])
+	// Scan manuel récursif qui skip node_modules pour éviter EPERM sur Windows.
+	const scanDir = async (dir: string, relBase: string): Promise<void> => {
+		let entries: import('node:fs').Dirent[]
+		try {
+			entries = await readdir(dir, { withFileTypes: true })
+		} catch {
+			return
+		}
+		for (const entry of entries) {
+			const rel = relBase ? `${relBase}/${entry.name}` : entry.name
+			if (entry.isDirectory()) {
+				if (entry.name === 'node_modules') continue
+				await scanDir(join(dir, entry.name), rel)
+			} else if (entry.name.endsWith('.mjs')) {
+				const content = await readFile(join(dir, entry.name), 'utf8')
+				let match
+				while ((match = packageRegex.exec(content)) !== null) {
+					// Pour les chemins imbriqués comme nuxt/node_modules/perfect-debounce,
+					// on prend le premier segment de package
+					packages.add(match[1])
+					// Aussi extraire les packages imbriqués (nuxt/node_modules/X -> X)
+					const nestedMatch = content.match(new RegExp(`${nodeModulesPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^'"]*?/node_modules/(@[^/'"]+\\/[^/'"]+|[^/'"]+)`))
+					if (nestedMatch) packages.add(nestedMatch[1])
+				}
+			}
 		}
 	}
+	await scanDir(serverDir, '')
 	// Récupérer les versions depuis les package.json dans node_modules
 	const result = new Map<string, string>()
 	for (const pkg of packages) {
