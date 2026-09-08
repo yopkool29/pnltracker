@@ -243,6 +243,32 @@ const extractExternalPackages = async (serverDir: string, absolutePrefix: string
 			// Package non trouvé à la racine, peut-être imbriqué — on l'ignore
 		}
 	}
+	// Collecter aussi les transitive dependencies pour éviter que npm essaie
+	// de les résoudre depuis le registry (où des versions peuvent ne pas exister).
+	const toVisit = [...result.keys()]
+	const visited = new Set<string>(result.keys())
+	while (toVisit.length > 0) {
+		const pkg = toVisit.pop()!
+		try {
+			const pkgJsonPath = join(rootDir, 'node_modules', pkg, 'package.json')
+			const pkgJson = JSON.parse(await readFile(pkgJsonPath, 'utf8'))
+			if (!pkgJson.dependencies) continue
+			for (const depName of Object.keys(pkgJson.dependencies)) {
+				if (visited.has(depName)) continue
+				try {
+					const depPkgPath = join(rootDir, 'node_modules', depName, 'package.json')
+					const depPkg = JSON.parse(await readFile(depPkgPath, 'utf8'))
+					result.set(depName, depPkg.version)
+					visited.add(depName)
+					toVisit.push(depName)
+				} catch {
+					// dep non trouvé dans node_modules racine — on l'ignore
+				}
+			}
+		} catch {
+			// package.json illisible — on ignore
+		}
+	}
 	return result
 }
 
