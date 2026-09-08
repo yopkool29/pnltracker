@@ -2,7 +2,8 @@
   "mcpServers": {
     "pnltracker": {
       "command": "pnpm",
-      "args": ["exec", "tsx", "mcp/server.ts"]
+      "args": ["exec", "tsx", "mcp/server.ts"],
+      "disabled": true
     }
   }
 }

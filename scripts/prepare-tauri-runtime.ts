@@ -34,6 +34,30 @@ const runtimeDir = join(rootDir, 'src-tauri', 'runtime')
 const appDir = join(runtimeDir, 'app')
 
 const isWindows = process.platform === 'win32'
+
+// Sur Windows, rm/cp de node:fs échouent souvent avec ENOTEMPTY/EPERM quand des handles
+// sont ouverts (IDE, Defender, indexing). cmd /c rmdir /s /q est plus robuste.
+const robustRm = async (target: string) => {
+	if (isWindows) {
+		try {
+			await execFileAsync('cmd', ['/c', 'rmdir', '/s', '/q', target], { stdio: 'ignore' })
+		} catch {
+			// Si rmdir échoue (dossier n'existe pas ou verrouillé), on ignore
+		}
+	} else {
+		await rm(target, { recursive: true, force: true })
+	}
+}
+
+// Sur Windows, cp de node:fs peut échouer avec EPERM. robocopy gère les locks correctement.
+const robustCp = async (src: string, dest: string) => {
+	if (isWindows) {
+		await execIgnoreStderr('robocopy', [src, dest, '/E', '/NFL', '/NDL', '/NJH', '/NJS', '/NP'], {}, [0, 1, 2, 3, 4, 5, 6, 7])
+	} else {
+		await cp(src, dest, { recursive: true, dereference: true })
+	}
+}
+
 const nodeArchive = isWindows
 	? `node-v${nodeVersion}-win-x64.zip`
 	: `node-v${nodeVersion}-linux-x64.tar.xz`
@@ -72,7 +96,7 @@ const prepareNode = async () => {
 			await download(`${baseUrl}/${nodeArchive}`, archivePath)
 		}
 		if (await sha256(archivePath) !== expectedChecksum) throw new Error(`Invalid checksum for ${nodeArchive}`)
-		await rm(extractedDir, { recursive: true, force: true })
+		await robustRm(extractedDir)
 	}
 	if (isWindows) {
 		// tar.exe émet des warnings "Can't restore time" sur Windows (inoffensifs) qui remplissent stderr.
@@ -82,7 +106,7 @@ const prepareNode = async () => {
 		await cp(join(extractedDir, 'node.exe'), join(runtimeDir, 'node', 'bin', 'node.exe'))
 		await cp(join(extractedDir, 'LICENSE'), join(runtimeDir, 'node', 'LICENSE'))
 		// Nettoyer l'extraction (95 MB) — seul node.exe et LICENSE sont nécessaires dans le runtime
-		await rm(extractedDir, { recursive: true, force: true })
+		await robustRm(extractedDir)
 	} else {
 		await execFileAsync('tar', ['-xJf', archivePath, '-C', cacheDir])
 		await mkdir(join(runtimeDir, 'node', 'bin'), { recursive: true })
@@ -116,7 +140,7 @@ const preparePostgres = async () => {
 	}
 	// Extraire directement dans le runtime pour éviter de dupliquer ~800 MB sur disque.
 	// L'archive extrait un dossier pgsql/ — on extrait dans un temp puis déplace seulement bin/lib/share.
-	await rm(pgInstallDir, { recursive: true, force: true })
+	await robustRm(pgInstallDir)
 	await mkdir(pgInstallDir, { recursive: true })
 	// Extraire seulement bin/, lib/, share/ de l'archive (ignore docs/, include/, pgAdmin/)
 	await execIgnoreStderr('tar', ['-xf', pgArchivePath, '-C', pgInstallDir, '--strip-components=1', 'pgsql/bin', 'pgsql/lib', 'pgsql/share'], {}, [1])
@@ -132,12 +156,12 @@ const fileExists = async (path: string): Promise<boolean> => {
 }
 
 const prepareApp = async () => {
-	await cp(join(rootDir, '.output'), join(appDir, '.output'), { recursive: true, dereference: true })
+	await robustCp(join(rootDir, '.output'), join(appDir, '.output'))
 	await cp(join(rootDir, 'src-tauri', 'server-start.mjs'), join(appDir, 'server-start.mjs'))
-	await cp(join(rootDir, 'scripts'), join(appDir, 'scripts'), { recursive: true })
-	await cp(join(rootDir, 'pnltracker-tools'), join(appDir, 'pnltracker-tools'), { recursive: true })
-	await rm(join(appDir, 'pnltracker-tools', 'python', '.venv'), { recursive: true, force: true })
-	await cp(join(rootDir, 'prisma', 'auth', 'migrations'), join(appDir, 'prisma', 'auth', 'migrations'), { recursive: true })
+	await robustCp(join(rootDir, 'scripts'), join(appDir, 'scripts'))
+	await robustCp(join(rootDir, 'pnltracker-tools'), join(appDir, 'pnltracker-tools'))
+	await robustRm(join(appDir, 'pnltracker-tools', 'python', '.venv'))
+	await robustCp(join(rootDir, 'prisma', 'auth', 'migrations'), join(appDir, 'prisma', 'auth', 'migrations'))
 	await mkdir(join(appDir, 'prisma-engine'), { recursive: true })
 	const prismaEngineName = isWindows
 		? 'query_engine-windows.dll.node'
@@ -153,7 +177,7 @@ const prepareApp = async () => {
 	// les chemins absolus en chemins relatifs ./node_modules/.
 	if (isWindows) {
 		// Copier generated/ (clients Prisma) — référencé par des imports absolus
-		await cp(join(rootDir, 'generated'), join(appDir, 'generated'), { recursive: true, dereference: true })
+		await robustCp(join(rootDir, 'generated'), join(appDir, 'generated'))
 		const serverDir = join(appDir, '.output', 'server')
 		const absolutePrefix = `file://${rootDir.replace(/\\/g, '/')}`
 		// 1. Extraire les packages externalisés depuis les imports dans les .mjs
@@ -329,7 +353,7 @@ const arch = process.arch
 if ((platform !== 'linux' && platform !== 'win32') || arch !== 'x64') {
 	throw new Error(`The Tauri production runtime currently supports Linux x64 and Windows x64 only, got ${platform}-${arch}`)
 }
-await rm(runtimeDir, { recursive: true, force: true })
+await robustRm(runtimeDir)
 await mkdir(appDir, { recursive: true })
 if (isWindows) {
 	await Promise.all([prepareNode(), prepareApp(), preparePostgres()])

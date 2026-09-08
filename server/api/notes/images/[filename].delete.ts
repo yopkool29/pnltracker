@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
         const uploadDir = resolve(process.cwd(), getScreenshotUploadPath(userId, dbName))
         const filePath = resolve(uploadDir, filename)
 
-        if (!filePath.startsWith(uploadDir + '/') && filePath !== uploadDir) {
+        if (!filePath.startsWith(uploadDir) || filePath === uploadDir) {
             throw createAppError({ statusCode: 400, message: 'Invalid path', tag: 'api.notes.images.delete.invalid_path' })
         }
 
