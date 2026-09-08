@@ -36,32 +36,61 @@
 - **UI**: Nuxt UI, TailwindCSS
 - **Database**: PostgreSQL with multi-schema isolation
 - **ORM**: Prisma
-- **Charts**: Chart.js
+- **Charts**: Chart.js, ECharts, Lightweight Charts (TradingView)
 
 ## 🚀 Getting Started
+
+> 📦 Pre-built Linux binaries are available on the [GitHub Releases](https://github.com/yopkool29/pnlTracker/releases) page. Windows and macOS builds will follow.
+
+### Prerequisites
+
+- **Docker** and **Docker Compose** (recommended)
+- OR **Node.js 22+** and **npm** for manual installation
 
 ### Docker (recommended)
 
 ```bash
 git clone https://github.com/yopkool29/pnltracker.git
 cd pnltracker
-cp .env.example .env
+
+# Configure environment
+cp .env.production.example .env
+# Edit .env to set your secrets (JWT, PostgreSQL password, admin token)
+# Or use the helper to auto-generate secure secrets:
+# Linux/mac: ./env-create-prod.sh
+# Windows:  ./env-create-prod.ps1
+
+# Build and start
 docker compose up -d --build
 ```
 
-### Local (npm)
+Access the app at **http://localhost:3001**
 
-```bash
-# Start PostgreSQL
-docker compose -f ./docker-compose.dev.yml up -d
-```
+### Local (npm)
 
 ```bash
 git clone https://github.com/yopkool29/pnltracker.git
 cd pnltracker
 npm install
+
+# Configure environment
+cp .env.example .env
+# Edit .env to set your secrets (JWT, PostgreSQL password, admin token)
+
+# Start PostgreSQL
+docker compose -f ./docker-compose.dev.yml up -d
+
+# Generate Prisma clients
+npx prisma generate --schema=prisma/auth/schema.prisma
+npx prisma generate --schema=prisma/data/schema.prisma
+
+# Initialize database and create admin
 ./scripts/reinit.sh
+
+# Start dev server
 npm run dev
+# OR production mode
+npm run build && npm start
 ```
 
 ### Desktop development (Tauri/Linux)
@@ -69,12 +98,17 @@ npm run dev
 The desktop development wrapper reuses the existing Nuxt/Nitro server and an external PostgreSQL instance. Start PostgreSQL as above, configure `.env`, then run:
 
 ```bash
-pnpm tauri:dev
+npm tauri:dev
 ```
 
 This opens PnlTracker in a Tauri WebView while keeping the site available on port `3003` for the local MCP server. The existing web and Docker commands are unchanged.
 
-> 📦 Pre-built Linux binaries are available on the [GitHub Releases](https://github.com/yopkool29/pnlTracker/releases) page. Windows and macOS builds will follow.
+### Post-installation checklist
+
+- Application accessible at http://localhost:3001
+- Login with `admin@mail.fr` / `admin`
+- Create your first database (isolated PostgreSQL schema)
+- Import your trading data
 
 ### 🔑 Default Login
 
@@ -108,14 +142,14 @@ This opens PnlTracker in a Tauri WebView while keeping the site available on por
 
 The read-only MCP server lets compatible assistants query PnlTracker through its HTTP API. PnlTracker and PostgreSQL must already be running.
 
-Set these values in `.env`:
+Set these values in `.env` (copy them from **Settings → Options → MCP** in the app):
 
 ```bash
-PNLTRACKER_API_URL=http://127.0.0.1:3003
+PNLTRACKER_API_URL=http://127.0.0.1:3001
 PNLTRACKER_MCP_TOKEN=your-user-api-token
 ```
 
-The token must match the PnlTracker user's API token. For the initial administrator, it matches `ADMIN_API_TOKEN`. Start the server manually with `pnpm mcp`, or use the project configuration in `.devin/mcp_config.json` from a compatible MCP client.
+The token must match the PnlTracker user's API token. For the initial administrator, it matches `ADMIN_API_TOKEN`. Start the server manually with `npm mcp`, or use the project configuration in `.devin/mcp_config.json` from a compatible MCP client.
 
 The MCP exposes databases, accounts, tags, global daily notes, active closed trades and aggregated performance. Trade details include allowlisted risk/reward, option metadata and detailed notes. It cannot modify data and does not expose screenshots, arbitrary metadata or open positions.
 
@@ -136,9 +170,8 @@ Example questions:
 ## 📝 License
 
 This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE.txt) file for details.
-I reserve the right to deploy the project on a server.
 
-> ☁️ A managed cloud version may be offered in the future for those who prefer a hosted solution.
+> ☁️ The code remains open-source, but I reserve the right to offer a managed, paid cloud hosting service for the app in the future.
 
 ## 🆘 Support
 
