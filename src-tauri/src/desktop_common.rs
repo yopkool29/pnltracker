@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fs;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -282,10 +282,22 @@ pub fn wait_for_nitro(child: &mut Child, port: u16) -> DesktopResult<()> {
 		if let Some(status) = child.try_wait()? {
 			return Err(std::io::Error::other(format!("Nitro exited with {status}")).into());
 		}
-		if TcpStream::connect_timeout(&address, Duration::from_millis(200)).is_ok() {
-			return Ok(());
+		// Tenter une vraie requête HTTP GET sur /loading.html pour confirmer
+		// que Nitro sert du HTTP, pas seulement que le port TCP est ouvert.
+		if let Ok(mut stream) = TcpStream::connect_timeout(&address, Duration::from_millis(500)) {
+			let _ = stream.set_read_timeout(Some(Duration::from_millis(500)));
+			let request = b"GET /loading.html HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n";
+			if stream.write_all(request).is_ok() {
+				let mut buf = [0u8; 64];
+				if stream.read(&mut buf).is_ok() {
+					// Une réponse HTTP commence par "HTTP/1.x"
+					if buf.starts_with(b"HTTP/1") {
+						return Ok(());
+					}
+				}
+			}
 		}
-		sleep(Duration::from_millis(100));
+		sleep(Duration::from_millis(200));
 	}
 	Err(std::io::Error::other("Nitro did not start within 30 seconds").into())
 }
