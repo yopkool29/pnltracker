@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { createReadStream } from 'node:fs'
-import { access, chmod, cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { access, chmod, cp, mkdir, readdir, readFile, rm, stat as fsStat, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve } from 'node:path'
 import { execFile, spawn } from 'node:child_process'
@@ -40,7 +40,7 @@ const isWindows = process.platform === 'win32'
 const robustRm = async (target: string) => {
 	if (isWindows) {
 		try {
-			await execFileAsync('cmd', ['/c', 'rmdir', '/s', '/q', target], { stdio: 'ignore' })
+			await execFileAsync('cmd', ['/c', 'rmdir', '/s', '/q', target], { windowsHide: true })
 		} catch {
 			// Si rmdir échoue (dossier n'existe pas ou verrouillé), on ignore
 		}
@@ -51,8 +51,21 @@ const robustRm = async (target: string) => {
 
 // Sur Windows, cp de node:fs peut échouer avec EPERM. robocopy gère les locks correctement.
 const robustCp = async (src: string, dest: string) => {
-	// Utiliser fs.cp de Node.js qui gère les symlinks et est plus fiable que robocopy sur Windows.
-	await cp(src, dest, { recursive: true, dereference: true, force: true })
+	if (isWindows) {
+		// robocopy gère les locks Windows et écrase les fichiers existants
+		// /E: copie les sous-dossiers vides, /NFL /NDL: silencieux, /NP: pas de progress
+		try {
+			await execFileAsync('robocopy', [src, dest, '/E', '/NFL', '/NDL', '/NP', '/IS', '/IT'], { windowsHide: true })
+		} catch (e: unknown) {
+			// robocopy retourne un code non-zero même en succès (0-7 = succès)
+			const err = e as { status?: number }
+			if (typeof err.status === 'number' && err.status > 7) {
+				throw e
+			}
+		}
+	} else {
+		await cp(src, dest, { recursive: true, dereference: true, force: true })
+	}
 }
 
 const nodeArchive = isWindows
@@ -194,7 +207,6 @@ const prepareApp = async () => {
 		for (const [pkgName] of packages) {
 			const src = join(rootDir, 'node_modules', pkgName)
 			const dest = join(serverNodeModules, pkgName)
-			if (await fileExists(dest)) continue
 			try {
 				await robustCp(src, dest)
 			} catch (e) {
@@ -209,7 +221,6 @@ const prepareApp = async () => {
 			for (const [peerName] of peerPackages) {
 				const src = join(rootDir, 'node_modules', peerName)
 				const dest = join(serverNodeModules, peerName)
-				if (await fileExists(dest)) continue
 				try {
 					await robustCp(src, dest)
 				} catch {
@@ -220,10 +231,24 @@ const prepareApp = async () => {
 		// 3c. Copier les dépendances transitives des packages copiés.
 		// Les packages externalisés (ex: @iconify/utils) ont des dependencies (ex: debug)
 		// qui ne sont pas externalisées mais nécessaires au runtime.
-		const transitivePackages = await collectTransitiveDependencies(serverNodeModules)
-		if (transitivePackages.size > 0) {
-			console.log(`Copying ${transitivePackages.size} transitive dependencies from root node_modules...`)
-			for (const [pkgName] of transitivePackages) {
+		// On itère car les packages copiés peuvent avoir des node_modules imbriqués
+		// avec leurs propres dépendances (ex: lazystream/node_modules/readable-stream v2
+		// dépend de process-nextick-args qui n'est pas dans readable-stream v4 racine).
+		let allTransitive = new Map<string, string>()
+		let iteration = 0
+		while (true) {
+			const transitivePackages = await collectTransitiveDependencies(packages, serverNodeModules)
+			// Filtrer ceux déjà copiés ou déjà trouvés
+			const newPackages = new Map<string, string>()
+			for (const [name, version] of transitivePackages) {
+				if (allTransitive.has(name)) continue
+				if (await fileExists(join(serverNodeModules, name))) continue
+				newPackages.set(name, version)
+			}
+			if (newPackages.size === 0) break
+			iteration++
+			console.log(`Copying ${newPackages.size} transitive dependencies (pass ${iteration})...`)
+			for (const [pkgName] of newPackages) {
 				const src = join(rootDir, 'node_modules', pkgName)
 				const dest = join(serverNodeModules, pkgName)
 				if (await fileExists(dest)) continue
@@ -232,7 +257,11 @@ const prepareApp = async () => {
 				} catch {
 					console.warn(`  could not copy transitive ${pkgName}, skipping`)
 				}
+				allTransitive.set(pkgName, newPackages.get(pkgName)!)
 			}
+		}
+		if (allTransitive.size > 0) {
+			console.log(`Total: ${allTransitive.size} transitive dependencies copied`)
 		}
 		// 4. Réécrire les chemins absolus en chemins relatifs ./node_modules/
 		await rewriteAbsolutePaths(serverDir, absolutePrefix)
@@ -372,16 +401,21 @@ const addPeerDependenciesToPackageJson = async (serverDir: string, peerPackages:
 	await writeFile(pkgJsonPath, JSON.stringify(pkgJson, null, 2))
 }
 
-// Collecte les dépendances transitives des packages déjà copiés dans server/node_modules.
-// Les packages externalisés (ex: @iconify/utils) ont des dependencies (ex: debug)
-// qui ne sont pas externalisées par Nitro mais nécessaires au runtime.
-// On parcourt récursivement les dependencies de chaque package copié.
-const collectTransitiveDependencies = async (serverNodeModules: string): Promise<Map<string, string>> => {
+// Collecte les dépendances transitives des packages externalisés.
+// On part de la liste des packages externalisés (extraits depuis les imports .mjs)
+// et on résout récursivement toutes leurs dependencies depuis le node_modules racine.
+// On scanne aussi les node_modules imbriqués déjà copiés (ex: ipx/node_modules/h3)
+// car ces packages ont leurs propres dependencies qui doivent être résolues.
+const collectTransitiveDependencies = async (
+	externalPackages: Map<string, string>,
+	serverNodeModules: string,
+): Promise<Map<string, string>> => {
 	const result = new Map<string, string>()
 	const visited = new Set<string>()
 	const queue: string[] = []
-	// Collecter les packages déjà présents dans server/node_modules
-	const collectInstalled = async (dir: string, prefix = '') => {
+	// Helper: collecter les package.json depuis un dossier node_modules
+	// (récursif dans les node_modules imbriqués)
+	const collectFromDir = async (dir: string) => {
 		let entries: string[]
 		try {
 			entries = await readdir(dir)
@@ -390,52 +424,82 @@ const collectTransitiveDependencies = async (serverNodeModules: string): Promise
 		}
 		for (const entry of entries) {
 			if (entry.startsWith('.')) continue
+			if (entry === 'node_modules') {
+				await collectFromDir(join(dir, entry))
+				continue
+			}
+			const entryPath = join(dir, entry)
+			let stat
+			try {
+				stat = await fsStat(entryPath)
+			} catch {
+				continue
+			}
+			if (!stat.isDirectory()) continue
 			if (entry.startsWith('@')) {
-				const subDir = join(dir, entry)
 				let subEntries: string[]
 				try {
-					subEntries = await readdir(subDir)
+					subEntries = await readdir(entryPath)
 				} catch {
 					continue
 				}
 				for (const sub of subEntries) {
-					queue.push(`${entry}/${sub}`)
+					const subPath = join(entryPath, sub)
+					const pkgJsonPath = join(subPath, 'package.json')
+					if (await fileExists(pkgJsonPath)) {
+						queue.push(pkgJsonPath)
+					}
+					const nestedNm = join(subPath, 'node_modules')
+					if (await fileExists(nestedNm)) {
+						await collectFromDir(nestedNm)
+					}
 				}
 			} else {
-				queue.push(entry)
+				const pkgJsonPath = join(entryPath, 'package.json')
+				if (await fileExists(pkgJsonPath)) {
+					queue.push(pkgJsonPath)
+				}
+				const nestedNm = join(entryPath, 'node_modules')
+				if (await fileExists(nestedNm)) {
+					await collectFromDir(nestedNm)
+				}
 			}
 		}
 	}
-	await collectInstalled(serverNodeModules)
-	// Parcourir la queue et résoudre les dependencies récursivement
-	while (queue.length > 0) {
-		const pkgName = queue.shift()!
-		if (visited.has(pkgName)) continue
-		visited.add(pkgName)
-		// Lire le package.json depuis le node_modules racine (source de vérité)
+	// 1. Ajouter les package.json des packages externalisés depuis le node_modules racine
+	for (const [pkgName] of externalPackages) {
 		const rootPkgPath = join(rootDir, 'node_modules', pkgName, 'package.json')
+		if (await fileExists(rootPkgPath)) {
+			queue.push(rootPkgPath)
+		}
+	}
+	// 2. Ajouter les package.json déjà copiés dans server/node_modules
+	// (y compris les node_modules imbriqués)
+	await collectFromDir(serverNodeModules)
+	// 3. Parcourir la queue et résoudre les dependencies récursivement
+	while (queue.length > 0) {
+		const pkgJsonPath = queue.shift()!
+		if (visited.has(pkgJsonPath)) continue
+		visited.add(pkgJsonPath)
 		let pkgJson: { dependencies?: Record<string, string> }
 		try {
-			pkgJson = JSON.parse(await readFile(rootPkgPath, 'utf8'))
+			pkgJson = JSON.parse(await readFile(pkgJsonPath, 'utf8'))
 		} catch {
 			continue
 		}
 		if (!pkgJson.dependencies) continue
 		for (const depName of Object.keys(pkgJson.dependencies)) {
-			if (visited.has(depName)) continue
 			// Vérifier si le package est déjà copié dans server/node_modules
 			const installedPath = join(serverNodeModules, depName)
-			if (await fileExists(installedPath)) {
-				visited.add(depName)
-				continue
-			}
-			// Vérifier qu'il existe dans le node_modules racine
+			if (await fileExists(installedPath)) continue
+			// Vérifier si déjà dans les résultats
+			if (result.has(depName)) continue
+			// Chercher le package dans le node_modules racine
 			const rootDepPath = join(rootDir, 'node_modules', depName, 'package.json')
 			try {
 				const depPkg = JSON.parse(await readFile(rootDepPath, 'utf8'))
 				result.set(depName, depPkg.version)
-				// Ajouter à la queue pour résoudre ses propres dependencies
-				queue.push(depName)
+				queue.push(rootDepPath)
 			} catch {
 				// Package non trouvé dans le node_modules racine — on l'ignore
 			}

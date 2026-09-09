@@ -2126,4 +2126,7 @@ export default {
             server_error: "Une erreur est survenue lors de l'inscription",
         },
     },
+    app: {
+        shuttingDown: 'Fermeture en cours...',
+    },
 }

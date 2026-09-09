@@ -33,6 +33,17 @@ fn close_splashscreen(app: tauri::AppHandle) {
     }
 }
 
+// Arrête les services backend et ferme l'application
+// Appelée par le frontend après avoir affiché l'overlay de fermeture
+#[tauri::command]
+fn quit_app(app: tauri::AppHandle) {
+    #[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "linux"))]
+    desktop::stop(&app);
+    #[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "windows"))]
+    desktop_windows::stop(&app);
+    app.exit(0);
+}
+
 // Langue courante de l'app, mise à jour par le frontend via set_app_language
 struct AppLanguage(std::sync::Mutex<String>);
 
@@ -115,19 +126,28 @@ pub fn run() {
                         .buttons(tauri_plugin_dialog::MessageDialogButtons::YesNo)
                         .show(move |confirmed| {
                             if confirmed {
-                                // Arrêter les services backend avant de fermer
-                                #[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "linux"))]
-                                desktop::stop(&app_handle);
-                                #[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "windows"))]
-                                desktop_windows::stop(&app_handle);
-                                // Fermer l'application
-                                app_handle.exit(0);
+                                // Émettre un événement pour que le frontend affiche un overlay
+                                // de fermeture avant d'arrêter les services.
+                                use tauri::Emitter;
+                                let _ = app_handle.emit("app:shutdown", ());
+                                // Arrêter les services dans un thread séparé pour ne pas
+                                // bloquer le main thread et laisser l'overlay s'afficher.
+                                let handle = app_handle.clone();
+                                std::thread::spawn(move || {
+                                    // Laisser le temps à l'overlay de s'afficher
+                                    std::thread::sleep(std::time::Duration::from_millis(600));
+                                    #[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "linux"))]
+                                    desktop::stop(&handle);
+                                    #[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "windows"))]
+                                    desktop_windows::stop(&handle);
+                                    handle.exit(0);
+                                });
                             }
                         });
                 }
             }
         })
-        .invoke_handler(tauri::generate_handler![close_splashscreen, set_app_language])
+        .invoke_handler(tauri::generate_handler![close_splashscreen, set_app_language, quit_app])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
