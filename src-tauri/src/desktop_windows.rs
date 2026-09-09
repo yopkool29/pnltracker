@@ -79,6 +79,13 @@ pub fn start(app: &mut App) -> DesktopResult<()> {
 	fs::create_dir_all(&data_dir)?;
 	fs::create_dir_all(&config_dir)?;
 
+	// Cacher la fenêtre principale immédiatement et la naviguer vers loading.html
+	// pour éviter qu'elle affiche http://localhost:3003/ (devUrl) avant que Nitro soit prêt.
+	// La fenêtre reste cachée jusqu'à ce que show_main_window() la montre après le démarrage de Nitro.
+	if let Some(main_window) = app.get_webview_window("main") {
+		let _ = main_window.hide();
+	}
+
 	let handle = app.handle().clone();
 	let resource_dir = resource_dir.clone();
 	let data_dir_for_init = data_dir.clone();
