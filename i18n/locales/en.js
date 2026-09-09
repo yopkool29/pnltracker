@@ -2088,4 +2088,7 @@ export default {
             server_error: 'An error occurred during registration',
         },
     },
+    app: {
+        shuttingDown: 'Shutting down...',
+    },
 }
