@@ -1,0 +1,14 @@
+fix: resolve nested transitive dependencies and add shutdown overlay
+
+- collectTransitiveDependencies now takes external packages as input
+  and scans nested node_modules (e.g. ipx/node_modules/h3) recursively
+- Iterative passes until no new packages are found
+- robustCp uses robocopy on Windows to handle file locks
+- Force recopy external packages to avoid stale partial copies
+- Add shutdown overlay: frontend shows loading screen while Rust
+  stops services in a background thread
+- Add app icon to MSI/NSIS bundle config
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
