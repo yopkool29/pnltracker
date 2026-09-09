@@ -14,7 +14,11 @@ pub type DesktopResult<T> = Result<T, Box<dyn Error>>;
 // Log générique qui append dans app.log dans le data dir
 pub fn app_log(data_dir: &Path, msg: &str) {
 	if let Ok(mut f) = fs::OpenOptions::new().create(true).append(true).open(data_dir.join("app.log")) {
-		let _ = writeln!(f, "{}", msg);
+		let ts = std::time::SystemTime::now()
+			.duration_since(std::time::UNIX_EPOCH)
+			.map(|d| d.as_millis())
+			.unwrap_or(0);
+		let _ = writeln!(f, "[{ts}] {msg}");
 	}
 }
 
