@@ -273,7 +273,12 @@ const prepareApp = async () => {
 // Retourne un Map<packageName, version> en lisant les package.json dans node_modules.
 const extractExternalPackages = async (serverDir: string, absolutePrefix: string): Promise<Map<string, string>> => {
 	const nodeModulesPrefix = `${absolutePrefix}/node_modules/`
-	const packageRegex = /file:\/\/[^'"]*\/node_modules\/(@[^/'"]+\/[^/'"]+|[^/'"]+)/g
+	// Capture les noms de packages depuis les imports file://.
+	// Gère deux structures :
+	//  - npm à plat : file:///.../node_modules/<pkg>/...
+	//  - pnpm store  : file:///.../node_modules/.pnpm/<pkg>@<ver>/node_modules/<pkg>/...
+	// Pour pnpm, il faut extraire le vrai nom après /node_modules/.pnpm/.../node_modules/
+	const packageRegex = /file:\/\/[^'"]*\/node_modules\/(?:\.pnpm\/[^/]+\/node_modules\/)?(@[^/'"]+\/[^/'"]+|[^/'"]+)/g
 	const packages = new Set<string>()
 	// Scan manuel récursif qui skip node_modules pour éviter EPERM sur Windows.
 	const scanDir = async (dir: string, relBase: string): Promise<void> => {
