@@ -282,17 +282,24 @@ pub fn wait_for_nitro(child: &mut Child, port: u16) -> DesktopResult<()> {
 		if let Some(status) = child.try_wait()? {
 			return Err(std::io::Error::other(format!("Nitro exited with {status}")).into());
 		}
-		// Tenter une vraie requête HTTP GET sur /loading.html pour confirmer
-		// que Nitro sert du HTTP, pas seulement que le port TCP est ouvert.
+		// Tenter une vraie requête HTTP GET sur / pour confirmer que Nitro
+		// sert l'application (SSR), pas seulement que le port TCP est ouvert.
 		if let Ok(mut stream) = TcpStream::connect_timeout(&address, Duration::from_millis(500)) {
-			let _ = stream.set_read_timeout(Some(Duration::from_millis(500)));
-			let request = b"GET /loading.html HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n";
+			let _ = stream.set_read_timeout(Some(Duration::from_millis(2000)));
+			let request = b"GET / HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n";
 			if stream.write_all(request).is_ok() {
-				let mut buf = [0u8; 64];
-				if stream.read(&mut buf).is_ok() {
-					// Une réponse HTTP commence par "HTTP/1.x"
-					if buf.starts_with(b"HTTP/1") {
-						return Ok(());
+				let mut buf = [0u8; 256];
+				if let Ok(n) = stream.read(&mut buf) {
+					if n > 0 {
+						let response = String::from_utf8_lossy(&buf[..n]);
+						// Vérifier que la réponse est HTTP/1.x avec un code 200 ou 3xx
+						if response.starts_with("HTTP/1.") {
+							if let Some(status_line) = response.lines().next() {
+								if status_line.contains(" 200 ") || status_line.contains(" 302 ") || status_line.contains(" 301 ") {
+									return Ok(());
+								}
+							}
+						}
 					}
 				}
 			}
@@ -308,15 +315,29 @@ pub fn write_mcp_config(data_dir: &Path, port: u16, token: &str) {
 	let _ = fs::write(data_dir.join("mcp-token"), token);
 }
 
-// Navigue la fenêtre principale vers Nitro et ferme le splashscreen après un délai
+// Navigue la fenêtre principale vers Nitro, ferme le splashscreen et montre la fenêtre.
+// On attend un court délai après la navigation pour laisser la page se charger.
 pub fn show_main_window(handle: &tauri::AppHandle, nitro_port: u16) {
 	if let Some(main_window) = handle.get_webview_window("main") {
 		let url: tauri::Url = format!("http://127.0.0.1:{nitro_port}")
 			.parse()
 			.unwrap_or_else(|_| "http://127.0.0.1:3003".parse().unwrap());
 		let _ = main_window.navigate(url);
-		let _ = main_window.show();
-		let _ = main_window.set_focus();
+		// Attendre que la page se charge avant de montrer la fenêtre et fermer le splashscreen
+		let handle_clone = handle.clone();
+		std::thread::spawn(move || {
+			// Laisser le temps à la webview de charger et rendre la page
+			std::thread::sleep(std::time::Duration::from_secs(2));
+			// Fermer le splashscreen
+			if let Some(splash) = handle_clone.get_webview_window("splashscreen") {
+				let _ = splash.close();
+			}
+			// Montrer la fenêtre principale
+			if let Some(main) = handle_clone.get_webview_window("main") {
+				let _ = main.show();
+				let _ = main.set_focus();
+			}
+		});
 	}
 }
 

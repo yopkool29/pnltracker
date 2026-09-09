@@ -217,6 +217,23 @@ const prepareApp = async () => {
 				}
 			}
 		}
+		// 3c. Copier les dépendances transitives des packages copiés.
+		// Les packages externalisés (ex: @iconify/utils) ont des dependencies (ex: debug)
+		// qui ne sont pas externalisées mais nécessaires au runtime.
+		const transitivePackages = await collectTransitiveDependencies(serverNodeModules)
+		if (transitivePackages.size > 0) {
+			console.log(`Copying ${transitivePackages.size} transitive dependencies from root node_modules...`)
+			for (const [pkgName] of transitivePackages) {
+				const src = join(rootDir, 'node_modules', pkgName)
+				const dest = join(serverNodeModules, pkgName)
+				if (await fileExists(dest)) continue
+				try {
+					await robustCp(src, dest)
+				} catch {
+					console.warn(`  could not copy transitive ${pkgName}, skipping`)
+				}
+			}
+		}
 		// 4. Réécrire les chemins absolus en chemins relatifs ./node_modules/
 		await rewriteAbsolutePaths(serverDir, absolutePrefix)
 	}
@@ -353,6 +370,78 @@ const addPeerDependenciesToPackageJson = async (serverDir: string, peerPackages:
 		}
 	}
 	await writeFile(pkgJsonPath, JSON.stringify(pkgJson, null, 2))
+}
+
+// Collecte les dépendances transitives des packages déjà copiés dans server/node_modules.
+// Les packages externalisés (ex: @iconify/utils) ont des dependencies (ex: debug)
+// qui ne sont pas externalisées par Nitro mais nécessaires au runtime.
+// On parcourt récursivement les dependencies de chaque package copié.
+const collectTransitiveDependencies = async (serverNodeModules: string): Promise<Map<string, string>> => {
+	const result = new Map<string, string>()
+	const visited = new Set<string>()
+	const queue: string[] = []
+	// Collecter les packages déjà présents dans server/node_modules
+	const collectInstalled = async (dir: string, prefix = '') => {
+		let entries: string[]
+		try {
+			entries = await readdir(dir)
+		} catch {
+			return
+		}
+		for (const entry of entries) {
+			if (entry.startsWith('.')) continue
+			if (entry.startsWith('@')) {
+				const subDir = join(dir, entry)
+				let subEntries: string[]
+				try {
+					subEntries = await readdir(subDir)
+				} catch {
+					continue
+				}
+				for (const sub of subEntries) {
+					queue.push(`${entry}/${sub}`)
+				}
+			} else {
+				queue.push(entry)
+			}
+		}
+	}
+	await collectInstalled(serverNodeModules)
+	// Parcourir la queue et résoudre les dependencies récursivement
+	while (queue.length > 0) {
+		const pkgName = queue.shift()!
+		if (visited.has(pkgName)) continue
+		visited.add(pkgName)
+		// Lire le package.json depuis le node_modules racine (source de vérité)
+		const rootPkgPath = join(rootDir, 'node_modules', pkgName, 'package.json')
+		let pkgJson: { dependencies?: Record<string, string> }
+		try {
+			pkgJson = JSON.parse(await readFile(rootPkgPath, 'utf8'))
+		} catch {
+			continue
+		}
+		if (!pkgJson.dependencies) continue
+		for (const depName of Object.keys(pkgJson.dependencies)) {
+			if (visited.has(depName)) continue
+			// Vérifier si le package est déjà copié dans server/node_modules
+			const installedPath = join(serverNodeModules, depName)
+			if (await fileExists(installedPath)) {
+				visited.add(depName)
+				continue
+			}
+			// Vérifier qu'il existe dans le node_modules racine
+			const rootDepPath = join(rootDir, 'node_modules', depName, 'package.json')
+			try {
+				const depPkg = JSON.parse(await readFile(rootDepPath, 'utf8'))
+				result.set(depName, depPkg.version)
+				// Ajouter à la queue pour résoudre ses propres dependencies
+				queue.push(depName)
+			} catch {
+				// Package non trouvé dans le node_modules racine — on l'ignore
+			}
+		}
+	}
+	return result
 }
 
 // Réécrit les chemins absolus file:///D:/.../node_modules/ en chemins relatifs

@@ -318,11 +318,29 @@ fn start_postgres(data_dir: &Path, config: &DesktopConfig) -> DesktopResult<Wind
 	if !conf.contains("listen_addresses") {
 		conf.push_str("\nlisten_addresses = '127.0.0.1'\n");
 	}
-	if !conf.contains(&format!("port = {}", pg.port)) {
-		conf.push_str(&format!("\nport = {}\n", pg.port));
+	// Remplacer la ligne port = active (pas les commentaires #port =)
+	// PostgreSQL utilise la dernière valeur, mais on évite l'accumulation de lignes.
+	let port_line = format!("port = {}", pg.port);
+	let mut found_port = false;
+	let mut new_lines = Vec::new();
+	for line in conf.lines() {
+		let trimmed = line.trim_start();
+		if trimmed.starts_with("port =") && !trimmed.starts_with('#') {
+			if !found_port {
+				new_lines.push(port_line.clone());
+				found_port = true;
+			}
+			// Skip additional active port lines
+		} else {
+			new_lines.push(line.to_string());
+		}
 	}
+	if !found_port {
+		new_lines.push(port_line);
+	}
+	conf = new_lines.join("\n") + "\n";
 	// Forcer client_encoding en UTF-8 pour éviter les erreurs WIN1252
-	conf.push_str("\nclient_encoding = 'UTF8'\n");
+	conf.push_str("client_encoding = 'UTF8'\n");
 	fs::write(&conf_path, conf)?;
 
 	// Démarrer PostgreSQL avec pg_ctl
@@ -376,7 +394,10 @@ fn start_postgres(data_dir: &Path, config: &DesktopConfig) -> DesktopResult<Wind
 		.arg("SELECT 1 FROM pg_database WHERE datname='pnltracker';")
 		.env("PGPASSWORD", &pg.password)
 		.output()?;
-	if String::from_utf8_lossy(&check.stdout).trim() == "1" {
+	let check_stdout = String::from_utf8_lossy(&check.stdout).trim().to_string();
+	let check_stderr = String::from_utf8_lossy(&check.stderr).trim().to_string();
+	debug_log(data_dir, &format!("start_postgres: psql check stdout='{}' stderr='{}' port={}", check_stdout, check_stderr, pg.port));
+	if check_stdout == "1" {
 		return Ok(pg);
 	}
 	let status = Command::new(bin_dir.join("createdb.exe"))
