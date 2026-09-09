@@ -187,24 +187,43 @@ pub fn stop(app: &AppHandle) {
 fn sync_runtime(source_dir: &Path, data_dir: &Path) -> DesktopResult<()> {
 	let source_version = fs::read_to_string(source_dir.join("runtime-version"))?;
 	let version_path = data_dir.join("runtime-version");
-	if fs::read_to_string(&version_path).ok().as_deref() == Some(source_version.as_str())
-		&& data_dir.join(".output/server/index.mjs").exists()
+	let data_version = fs::read_to_string(&version_path).ok();
+	let index_exists = data_dir.join(".output/server/index.mjs").exists();
+	debug_log(data_dir, &format!("sync_runtime: source_version={source_version}, data_version={data_version:?}, index_exists={index_exists}"));
+	if data_version.as_deref() == Some(source_version.as_str())
+		&& index_exists
 	{
+		debug_log(data_dir, "sync_runtime: version matches, skipping copy");
 		return Ok(());
 	}
+	debug_log(data_dir, "sync_runtime: version mismatch or missing index, syncing runtime...");
+	// Les gros dossiers (.output, generated) sont liés via junction Windows
+	// au lieu d'être copiés (~12000 fichiers, 82 MB). Les junctions sont instantanées.
+	for name in [".output", "generated"] {
+		let target = data_dir.join(name);
+		// Supprimer l'ancien (copie ou junction)
+		if target.exists() || std::fs::symlink_metadata(&target).is_ok() {
+			robust_remove_dir_all(&target)?;
+		}
+		let source = source_dir.join(name);
+		debug_log(data_dir, &format!("sync_runtime: creating junction {name}..."));
+		create_junction(&source, &target)?;
+		debug_log(data_dir, &format!("sync_runtime: junction {name} done"));
+	}
+	// Les petits dossiers sont copiés normalement
 	for name in [
-		".output",
 		"scripts",
 		"pnltracker-tools",
 		"prisma",
 		"prisma-engine",
-		"generated",
 	] {
 		let target = data_dir.join(name);
 		if target.exists() {
 			robust_remove_dir_all(&target)?;
 		}
+		debug_log(data_dir, &format!("sync_runtime: copying {name}..."));
 		copy_dir(&source_dir.join(name), &target)?;
+		debug_log(data_dir, &format!("sync_runtime: {name} done"));
 	}
 	// Copier les binaires PostgreSQL sans écraser les données (postgres/data)
 	let pg_install_source = source_dir.join("postgres").join("install");
@@ -212,12 +231,34 @@ fn sync_runtime(source_dir: &Path, data_dir: &Path) -> DesktopResult<()> {
 	if pg_install_target.exists() {
 		robust_remove_dir_all(&pg_install_target)?;
 	}
+	debug_log(data_dir, "sync_runtime: copying postgres/install...");
 	copy_dir(&pg_install_source, &pg_install_target)?;
+	debug_log(data_dir, "sync_runtime: postgres/install done");
 	fs::copy(
 		source_dir.join("server-start.mjs"),
 		data_dir.join("server-start.mjs"),
 	)?;
 	fs::write(version_path, source_version)?;
+	Ok(())
+}
+
+// Crée une junction Windows (mklink /J) — pas besoin d'admin, instantané
+fn create_junction(source: &Path, target: &Path) -> DesktopResult<()> {
+	use std::os::windows::process::CommandExt;
+	const CREATE_NO_WINDOW: u32 = 0x08000000;
+	let status = Command::new("cmd")
+		.args(["/C", "mklink", "/J"])
+		.arg(target)
+		.arg(source)
+		.creation_flags(CREATE_NO_WINDOW)
+		.status()?;
+	if !status.success() {
+		return Err(std::io::Error::other(format!(
+			"mklink /J failed for {} -> {}",
+			target.display(),
+			source.display()
+		)).into());
+	}
 	Ok(())
 }
 
