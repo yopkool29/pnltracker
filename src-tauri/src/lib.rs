@@ -140,6 +140,24 @@ pub fn run() {
             desktop::start(app)?;
             #[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "windows"))]
             desktop_windows::start(app)?;
+            // En dev, Tauri attend que devUrl soit disponible avant de créer les fenêtres.
+            // Nitro est donc déjà démarré : naviguer main vers l'app, la montrer et fermer le splashscreen.
+            #[cfg(debug_assertions)]
+            {
+                use tauri::Manager;
+                let handle = app.handle().clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    if let Some(main) = handle.get_webview_window("main") {
+                        let _ = main.navigate("/".parse().unwrap_or_default());
+                        let _ = main.show();
+                        let _ = main.set_focus();
+                    }
+                    if let Some(splash) = handle.get_webview_window("splashscreen") {
+                        let _ = splash.close();
+                    }
+                });
+            }
             Ok(())
         })
         .build(tauri::generate_context!())
