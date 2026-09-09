@@ -553,6 +553,9 @@ const rewriteAbsolutePaths = async (serverDir: string, absolutePrefix: string) =
 		// npm installe les packages à plat, mais certains imports pointent vers des sous-dossiers
 		// imbriqués (ex: nuxt/node_modules/perfect-debounce). Les aplatir vers node_modules/<pkg>.
 		content = content.replaceAll('node_modules/nuxt/node_modules/', 'node_modules/')
+		// pnpm utilise une structure .pnpm/<pkg>@<version>/node_modules/<pkg>/
+		// On aplatit vers node_modules/<pkg>/
+		content = content.replaceAll(/node_modules\/\.pnpm\/[^/]+\/node_modules\//g, 'node_modules/')
 		await writeFile(filePath, content)
 	}
 }
