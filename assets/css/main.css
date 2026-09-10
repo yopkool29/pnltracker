@@ -95,6 +95,62 @@ html.dark.dark-gold {
     --ui-color-primary-950: #451a03;
 }
 
+/* Header dark en mode light (light et light-blue) pour créer du contraste */
+html:not(.dark) header {
+    --ui-bg: #111b33;
+    --ui-bg-elevated: #1a2744;
+    --ui-bg-accented: #1a2744;
+    --ui-text: #cbd5e1;
+    --ui-text-highlighted: #f1f5f9;
+    --ui-text-muted: #94a3b8;
+    --ui-text-dimmed: #64748b;
+    --ui-text-toned: #94a3b8;
+    --ui-border: rgba(255, 255, 255, 0.1);
+    --ui-border-muted: rgba(255, 255, 255, 0.08);
+    --ui-border-accented: rgba(255, 255, 255, 0.15);
+    background-color: #111b33;
+}
+
+html:not(.dark) header .header-navbar {
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Logo dark version dans le header en mode light */
+html:not(.dark) header .app-logo .logo-light {
+    display: none !important;
+}
+
+html:not(.dark) header .app-logo .logo-dark {
+    display: inline-block !important;
+}
+
+/* Inverser l'icône GitHub dans le header en mode light */
+html:not(.dark) header img[src*="github.svg"] {
+    filter: invert(1);
+}
+
+/* Restore les couleurs light d'origine dans la sub-bar (QuickNav, NetGrossToggle, etc.) */
+html:not(.dark) header .header-subbar {
+    --ui-bg: #f2f2f2;
+    --ui-bg-elevated: #ffffff;
+    --ui-bg-accented: #e5e7eb;
+    --ui-text: #334155;
+    --ui-text-highlighted: #334155;
+    --ui-text-muted: #64748b;
+    --ui-text-dimmed: #94a3b8;
+    --ui-text-toned: #475569;
+    --ui-border: #e5e7eb;
+    --ui-border-muted: #e5e7eb;
+    --ui-border-accented: #d1d5db;
+}
+
+html:not(.dark) header .header-subbar .logwindow > div:first-child a,
+html:not(.dark) header .header-subbar .logwindow > div:first-child span {
+    color: #475569;
+}
+
 button[role='combobox'],
 button[role='tab'] {
     user-select: none;
