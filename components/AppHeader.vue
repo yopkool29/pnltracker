@@ -3,14 +3,15 @@
         class="w-full shadow text-default select-none sticky top-0 z-40 transition-all duration-200"
         :class="scrolled ? (isTauriLinux ? 'bg-default' : 'bg-default/80 backdrop-blur-md') : 'bg-default'">
         <div>
+            <div class="header-navbar">
             <div class="container mx-auto flex justify-between items-center px-4"
                 :class="scrolled ? 'py-1.5' : 'py-4'">
                 <div class="flex items-center gap-6">
                     <div class="font-bold text-lg">
                         <NuxtLink to="/" class="relative">
-                            <AppLogo :width="scrolled ? 100 : 150" class="transition-all duration-200" />
+                            <AppLogo :width="scrolled ? 120 : 170" class="transition-all duration-200" />
                             <span v-if="isDevMode"
-                                class="absolute -bottom-3 -right-1 text-[10px] font-bold text-blue-500 dark:text-red-500 uppercase tracking-wide">
+                                class="absolute -bottom-3 -right-1 text-[10px] font-bold text-red-500 dark:text-red-500 uppercase tracking-wide">
                                 dev
                             </span>
                         </NuxtLink>
@@ -207,8 +208,9 @@
                     </div>
                 </div>
             </div>
+            </div>
             <div v-show="userStore.user && currentDatabase && !scrolled"
-                class="w-full flex items-center justify-between border-t border-default"
+                class="header-subbar w-full flex items-center justify-between border-t border-default"
                 style="background: linear-gradient(to bottom, var(--ui-bg-elevated) 0%, var(--ui-bg) 100%)">
                 <div class="container mx-auto py-4 px-4 flex items-center gap-4">
                     <QuickNav v-if="userStore.user?.settings_object?.showQuickNav" class="hidden lg:block" />
@@ -218,13 +220,15 @@
             </div>
             <!-- QuickNav compact au scroll -->
             <div v-show="userStore.user && currentDatabase && scrolled && userStore.user?.settings_object?.showQuickNav"
-                class="w-full border-t border-default hidden lg:block">
+                class="header-subbar w-full border-t border-default bg-default hidden lg:block">
                 <div class="container mx-auto py-1 px-4">
                     <QuickNav class="!py-0" />
                 </div>
             </div>
-            <div class="container mx-auto flex justify-between items-center px-4">
-                <LogView ref="myLogView" class="w-full" />
+            <div class="header-subbar w-full bg-default">
+                <div class="container mx-auto flex justify-between items-center px-4">
+                    <LogView ref="myLogView" class="w-full" />
+                </div>
             </div>
         </div>
     </header>
