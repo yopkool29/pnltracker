@@ -123,6 +123,7 @@
                             >
                                 <div class="text-xs font-semibold mb-1">{{ $t('components.calendar.index.total') }}</div>
                                 <div
+                                    v-if="week.days.some((day) => day.isCurrentMonth && day.count > 0)"
                                     class="text-lg font-bold"
                                     :class="{
                                         'calendar-pnl-positive': week.total > 0,
@@ -131,6 +132,7 @@
                                 >
                                     {{ formatCurrency(week.total) }}
                                 </div>
+                                <div v-else class="text-lg font-bold text-muted">—</div>
                             </div>
                         </div>
                     </div>
