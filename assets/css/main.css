@@ -108,6 +108,7 @@ html:not(.dark) header {
     --ui-border: rgba(255, 255, 255, 0.1);
     --ui-border-muted: rgba(255, 255, 255, 0.08);
     --ui-border-accented: rgba(255, 255, 255, 0.15);
+    --ui-primary: var(--ui-color-primary-300);
     background-color: #111b33;
 }
 
@@ -144,6 +145,23 @@ html:not(.dark) header .header-subbar {
     --ui-border: #e5e7eb;
     --ui-border-muted: #e5e7eb;
     --ui-border-accented: #d1d5db;
+}
+
+/* Active link colors dans le header dark en mode light */
+html:not(.dark) header .header-desktop-link-active {
+    @apply bg-primary/10 text-primary;
+}
+
+html:not(.dark) header .header-desktop-link-active:hover {
+    @apply bg-primary/20 text-primary;
+}
+
+html:not(.dark) header .header-mobile-link-active {
+    @apply bg-primary/10 text-primary;
+}
+
+html:not(.dark) header .header-mobile-link-active:hover {
+    @apply bg-primary/20 text-primary;
 }
 
 html:not(.dark) header .header-subbar .logwindow > div:first-child a,
