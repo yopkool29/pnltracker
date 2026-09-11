@@ -18,10 +18,10 @@
                     </div>
                     <!-- Database Indicator (clickable) -->
                     <button v-if="userStore.user && currentDatabase"
-                        class="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg hover:bg-primary/20 transition-all duration-200 ease-out hover:scale-105 focus-visible:scale-105 cursor-pointer"
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-accented transition-all duration-200 ease-out hover:scale-105 focus-visible:scale-105 cursor-pointer"
                         @click="navigateTo('/select-database')">
-                        <UIcon name="i-heroicons-circle-stack" class="w-4 h-4 text-primary" />
-                        <span v-if="!scrolled" class="text-sm font-medium text-primary">{{
+                        <UIcon name="i-heroicons-circle-stack" class="w-4 h-4 text-highlighted" />
+                        <span v-if="!scrolled" class="text-sm font-bold text-highlighted">{{
                             currentDatabase.displayName }}</span>
                     </button>
                     <nav v-if="userStore.user && currentDatabase" class="hidden lg:flex w-full items-center gap-x-2">

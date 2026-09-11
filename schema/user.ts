@@ -70,6 +70,7 @@ export const SettingsContentSchema = z.object({
     timezoneDisplay: z.enum(['CURRENT', 'LOCAL', 'UTC']).default('CURRENT'),
     timezoneLocal: z.string().default('Europe/Paris'),
     timezoneUtcOffset: z.number().default(0),
+    fontFamily: z.enum(['system', 'inter', 'jetbrains', 'geist', 'jakarta', 'archivo', 'source-sans']).default('system'),
     pnlThreshold: z.number().default(0),
     defaultDatabaseId: z.number().optional().nullable(),
     storageUrl: z.string().default('https://your-ngrok-url.ngrok.io'),

@@ -75,6 +75,22 @@
                         </div>
                     </fieldset>
 
+                    <!-- Section Police de caractere -->
+                    <fieldset class="border border-default rounded-lg p-4 space-y-4">
+                        <legend class="px-2 text-sm font-semibold text-secondary">{{ $t('components.settings.options.font_section') }}</legend>
+                        <UFormField name="fontFamily" :label="$t('components.settings.options.font_family')">
+                            <USelect
+                                v-model="formState.fontFamily"
+                                :items="fontFamilyOptions"
+                                size="md"
+                                class="w-48"
+                            />
+                            <template #description>
+                                <span class="text-sm text-secondary">{{ $t('components.settings.options.font_family_desc') }}</span>
+                            </template>
+                        </UFormField>
+                    </fieldset>
+
                     <!-- Section Détail du trade -->
                     <div class="section-separator">
                         <h3 class="section-subtitle-lg">{{ $t('components.settings.options.trade_detail_section') }}</h3>
@@ -595,6 +611,17 @@ const timezoneDisplayOptions = computed(() => [
   { label: t('components.settings.options.timezone_mode_current'), value: 'CURRENT' },
   { label: t('components.settings.options.timezone_mode_local'), value: 'LOCAL' },
   { label: t('components.settings.options.timezone_mode_utc'), value: 'UTC' },
+])
+
+// Options pour la police de caractere
+const fontFamilyOptions = computed(() => [
+  { label: t('components.settings.options.font_system'), value: 'system' },
+  { label: 'Inter', value: 'inter' },
+  { label: 'JetBrains Mono', value: 'jetbrains' },
+  { label: 'Geist', value: 'geist' },
+  { label: 'Plus Jakarta Sans', value: 'jakarta' },
+  { label: 'Archivo', value: 'archivo' },
+  { label: 'Source Sans 3', value: 'source-sans' },
 ])
 
 // Options pour les fuseaux horaires IANA
