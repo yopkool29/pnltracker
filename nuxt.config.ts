@@ -56,6 +56,27 @@ export default defineNuxtConfig({
     },
 
     vite: {
+        optimizeDeps: {
+            include: [
+                '@internationalized/date',
+                'vue-chartjs',
+                'lightweight-charts',
+                'chart.js',
+                'echarts',
+                'vue-echarts',
+                '@milkdown/core',
+                '@milkdown/ctx',
+                '@milkdown/prose',
+                '@milkdown/utils',
+                '@milkdown/transformer',
+                '@fontsource/inter',
+                '@fontsource/jetbrains-mono',
+                '@fontsource/geist',
+                '@fontsource/plus-jakarta-sans',
+                '@fontsource/archivo',
+                '@fontsource/source-sans-3',
+            ]
+        },
         resolve: {
             alias: {
                 'element-resize-detector': '~/shims/element-resize-detector.js',
