@@ -47,6 +47,12 @@
             </template>
             <template #symbol-cell="{ row }">
                 <span class="font-semibold">{{ row.original.symbol }}</span>
+                <UIcon
+                    v-if="(row.original.metadata as Record<string, unknown>)?.detailedNote"
+                    name="i-heroicons-document-text"
+                    class="w-3.5 h-3.5 text-primary-500 ml-1 inline-block"
+                    :title="$t('components.trade.noteEditor.label')"
+                />
             </template>
             <template #account-cell="{ row }">
                 <span class="font-semibold">{{ row.original.account_displayName }}</span>

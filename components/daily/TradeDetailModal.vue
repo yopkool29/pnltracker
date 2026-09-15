@@ -132,12 +132,12 @@
                     <span class="text-secondary-sm block">{{ $t('components.common.columns.headers.screenshots') }}</span>
                     <ScreenshotManager :model-value="allScreenshots" :readonly="true" :max-image-width="128" :max-image-height="128" />
                 </div>
-                <div v-if="showChart" class="border-t pt-4" @click.stop>
-                    <TradeChart :key="trade.id" :trade="trade" :adjacent-trades="adjacentTrades" />
-                </div>
                 <div v-if="showDetailedNote && detailedNote">
                     <span class="text-secondary-sm block mb-2">{{ $t('components.trade.noteEditor.label') }}</span>
                     <CommonNoteEditor :model-value="detailedNote" :readonly="true" />
+                </div>
+                <div v-if="showChart" class="border-t pt-4" @click.stop>
+                    <TradeChart :key="trade.id" :trade="trade" :adjacent-trades="adjacentTrades" />
                 </div>
             </div>
         </template>
