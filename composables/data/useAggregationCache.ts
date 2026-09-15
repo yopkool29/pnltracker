@@ -17,9 +17,8 @@ export const useAggregationCache = () => {
 		const key = getCacheKey(mode)
 		const cached = cache.value.get(key)
 		if (cached) {
-            console.log("getGroupedTrades: cache hit", key)
             return cached
-        } 
+        }
 
 		const trades = dataStore.lastTrades as TradeType[]
 		if (!trades || trades.length === 0) return {}

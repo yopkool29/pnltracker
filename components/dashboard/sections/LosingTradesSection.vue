@@ -41,6 +41,7 @@ const rows = computed<StatsRow[]>(() => [
 	{ label: 'components.dashboard.losing_trades.avg_loss', displayValue: formatLossValue(result.value.avgLoss) },
 	{ label: 'components.dashboard.losing_trades.std_dev', value: result.value.stdDevLoss, format: 'currency' },
 	{ label: 'components.dashboard.losing_trades.commission', value: result.value.losingTradesCommission, format: 'currency' },
+	{ label: 'components.dashboard.losing_trades.swap', value: result.value.losingTradesSwap, format: 'currency' },
 	{ label: 'components.dashboard.losing_trades.avg_loss_time', value: result.value.avgLossDuration, format: 'duration' },
 	{ label: 'components.dashboard.losing_trades.longest_loss_time', value: result.value.maxLossDuration, format: 'duration' },
 	{ label: 'components.dashboard.losing_trades.max_losing_streak', value: result.value.maxLosingStreak, format: 'number', valueClass: 'loss-text' },

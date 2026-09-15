@@ -22,6 +22,7 @@ export const getTradeColumnHeaders = () => {
         profit: t('components.common.columns.headers.profit'),
         grossProfit: t('components.common.columns.headers.grossProfit'),
         commission: t('components.common.columns.headers.commission'),
+        swap: t('components.common.columns.headers.swap'),
         stopLoss: t('components.common.columns.headers.stopLoss'),
         takeProfit: t('components.common.columns.headers.takeProfit'),
         riskReward: t('components.common.columns.headers.riskReward'),

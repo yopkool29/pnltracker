@@ -61,6 +61,17 @@
                         <span class="text-sm">{{ m.label }}</span>
                     </div>
                 </div>
+                <!-- Propriétés du trade dans le tooltip (bar = P&L par Trade) -->
+                <div v-if="config.seriesType === 'bar'" class="space-y-1 border-t border-default pt-2">
+                    <span class="text-sm font-medium">{{ $t('components.dashboard.breakdown.tooltip_metrics') }}</span>
+                    <div v-for="opt in tradeTooltipOptionItems" :key="opt.value" class="flex items-center gap-2">
+                        <UCheckbox
+                            :model-value="selectedTooltipMetrics.includes(opt.value)"
+                            @update:model-value="toggleTooltipMetric(opt.value)"
+                        />
+                        <span class="text-sm">{{ opt.label }}</span>
+                    </div>
+                </div>
             </div>
         </template>
         <!-- Réticule : 1 bouton toggle (cross ↔ line) -->
@@ -83,6 +94,7 @@ import { calculateMetricsByDimension } from '~/composables/analytics/useAnalytic
 import { getMetricValueForMetric, formatMetricValueForMetric } from '~/composables/analytics/breakdownMetrics'
 import type { BreakdownMetrics } from '~/composables/analytics/breakdownMetrics'
 import { buildTooltipLines, useTooltipMetrics } from '~/composables/charts/useTooltipMetrics'
+import { tradeTooltipOptions } from '~/composables/dashboard/useBreakdownConfig'
 import { buildBarData, buildBarSeries, buildLineSeries, buildBarColors, colorToRgba, chartColors, isMonetaryMetric } from '~/utils/dashboard'
 import type { EChartsFormatterParams, EChartsAreaStyle } from '~/utils/dashboard'
 import { formatDateWithUserTimezone } from '~/utils/date-utils'
@@ -118,7 +130,12 @@ const {
 } = useTimeSeriesConfig(props.itemId)
 
 // --- Métriques supplémentaires dans le tooltip (barMA seulement) ---
-const { selectedTooltipMetrics, toggleTooltipMetric } = useTooltipMetrics(config, updateConfig)
+const { selectedTooltipMetrics, toggleTooltipMetric, buildTradeTooltipLines } = useTooltipMetrics(config, updateConfig)
+
+// Options de propriétés du trade pour le chart "P&L par Trade"
+const tradeTooltipOptionItems = computed(() =>
+    tradeTooltipOptions.map(opt => ({ value: opt.value, label: t(opt.labelKey) }))
+)
 
 // --- Formatage axe Y (utilise le même formatage que les breakdowns) ---
 const yAxisFormatter = computed<(v: number) => string>(() => {
@@ -245,7 +262,19 @@ const chartOption = computed<EChartsOption | undefined>(() => {
                     if (trade.closeDate) {
                         date = formatDateWithUserTimezone(trade.closeDate, userStore.user?.settings_object || {}, true, localeVal)
                     }
-                    return [date ? `Date: ${date}` : '', `P&L: ${formatCurrency(val)}`, trade.account_displayName || ''].filter(Boolean).join('<br/>')
+                    const symbolLabel = t('components.common.columns.headers.symbol')
+                    const accountLabel = t('components.common.columns.headers.account')
+                    const pnlLabel = displayModeNet.value
+                        ? t('components.dashboard.breakdown.trade_property.netProfit')
+                        : t('components.dashboard.breakdown.trade_property.profit')
+                    const primaryLines = [
+                        date ? `Date: ${date}` : '',
+                        `${pnlLabel}: ${formatCurrency(val)}`,
+                        trade.account_displayName ? `${accountLabel}: ${trade.account_displayName}` : '',
+                        trade.symbol ? `${symbolLabel}: ${trade.symbol}` : '',
+                    ].filter(Boolean)
+                    const extraLines = buildTradeTooltipLines(trade, new Set(['pnl']))
+                    return [...primaryLines, ...extraLines].join('<br/>')
                 },
             },
             grid: chartGrid,

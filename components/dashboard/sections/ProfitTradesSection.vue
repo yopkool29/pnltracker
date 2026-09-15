@@ -31,6 +31,7 @@ const rows = computed<StatsRow[]>(() => [
 	{ label: 'components.dashboard.profit_trades.avg_win', value: result.value.avgWin, format: 'currency' },
 	{ label: 'components.dashboard.profit_trades.std_dev', value: result.value.stdDevWin, format: 'currency' },
 	{ label: 'components.dashboard.profit_trades.commission', value: result.value.winningTradesCommission, format: 'currency' },
+	{ label: 'components.dashboard.profit_trades.swap', value: result.value.winningTradesSwap, format: 'currency' },
 	{ label: 'components.dashboard.profit_trades.avg_win_time', value: result.value.avgWinDuration, format: 'duration' },
 	{ label: 'components.dashboard.profit_trades.longest_win_time', value: result.value.maxWinDuration, format: 'duration' },
 	{ label: 'components.dashboard.profit_trades.max_winning_streak', value: result.value.maxWinningStreak, format: 'number', valueClass: 'profit-text' },

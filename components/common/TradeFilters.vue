@@ -50,15 +50,6 @@
             </template>
         </UCollapsible>
 
-        <div v-if="showColumnVisibility" class="filter-actions justify-start mt-4">
-            <ColumnVisibilityMenu
-                :table="table"
-                :label-columns-header="labelColumnsHeader"
-                :exclude-columns="excludeColumns"
-                :button-class="columnVisibilityButtonClass"
-            />
-        </div>
-
         <div class="filter-actions-lg mt-4">
             <UButton
                 type="submit"
@@ -75,6 +66,15 @@
             <UButton icon="i-heroicons-arrow-path" color="neutral" variant="ghost" size="xs" @click="emit('reset')">
                 {{ $t('components.trade.table.advanced_filters.clear') }}
             </UButton>
+        </div>
+
+        <div v-if="showColumnVisibility" class="filter-actions justify-start mt-4">
+            <ColumnVisibilityMenu
+                :table="table"
+                :label-columns-header="labelColumnsHeader"
+                :exclude-columns="excludeColumns"
+                :button-class="columnVisibilityButtonClass"
+            />
         </div>
     </UForm>
 </template>

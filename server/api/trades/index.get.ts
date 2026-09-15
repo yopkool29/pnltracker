@@ -81,7 +81,6 @@ export default defineEventHandler(async (event) => {
             }
         })
 
-
         return tradesWithTags
 
     } catch (error) {

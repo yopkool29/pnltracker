@@ -37,8 +37,10 @@
                                 <span class="stat-label">{{ $t('components.daily.trade_group.pnl') }}:</span>
                                 <span class="stat-value text-lg leading-none" :class="pnl >= 0 ? 'profit-text' : 'loss-text'">
                                     {{ formatCurrency(pnl) }}
-                                    <span v-if="totalCommission" class="text-xs text-muted ml-1">[{{
-                                        formatCurrency(totalCommission) }}]</span>
+                                    <span v-if="totalCommission || totalSwap" class="text-xs text-muted ml-1">[
+                                        {{ $t('components.common.columns.headers.commission') }}: {{ formatCurrency(totalCommission) }},
+                                        {{ $t('components.common.columns.headers.swap') }}: {{ formatCurrency(totalSwap) }}]
+                                    </span>
                                 </span>
                             </div>
                         </div>
@@ -228,6 +230,7 @@ const tradeStats = computed(() => ({
     winrate: getWinrate(activeTrades.value, 1),
     pnl: getPNL(activeTrades.value, 2, displayModeNet.value),
     totalCommission: activeTrades.value.reduce((sum, t) => sum + (t.commission || 0), 0),
+    totalSwap: activeTrades.value.reduce((sum, t) => sum + (t.exchange || 0), 0),
     intradayChartData: generateIntradayPnlChartData(activeTrades.value),
 }))
 
@@ -235,6 +238,7 @@ const winLoss = computed(() => tradeStats.value.winLoss)
 const winrate = computed(() => tradeStats.value.winrate)
 const pnl = computed(() => tradeStats.value.pnl)
 const totalCommission = computed(() => tradeStats.value.totalCommission)
+const totalSwap = computed(() => tradeStats.value.totalSwap)
 const intradayChartData = computed(() => tradeStats.value.intradayChartData)
 
 // Données du tableau calculées uniquement lorsque le collapsible est ouvert
@@ -299,6 +303,13 @@ const columns = computed(() => {
             accessorKey: 'commission',
             header: labelColumnsHeader.value.commission,
             cell: ({ row }: { row: { original: TradeExtendedType } }) => formatCurrency(row.original.commission || 0),
+            meta: addMeta('w-[100px]')
+        },
+        {
+            id: 'swap',
+            accessorKey: 'exchange',
+            header: labelColumnsHeader.value.swap,
+            cell: ({ row }: { row: { original: TradeExtendedType } }) => formatCurrency(row.original.exchange || 0),
             meta: addMeta('w-[100px]')
         },
         {

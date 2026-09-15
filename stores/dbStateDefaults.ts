@@ -57,12 +57,12 @@ export const defaultDashBoardResult: DashBoardResult = {
 	pnl: 0, appt: 0, plRatio: 0, winrate: 0, profitFactor: 0,
 	recoveryFactor: 0, sharpeRatio: 0, sortinoRatio: 0, calmarRatio: 0, sqn: 0, ulcerIndex: 0,
 	tradesCount: 0, grossPnl: 0, totalContracts: 0, avgTradeDuration: 0, maxTradeDuration: 0,
-	expectancy: 0, totalCommission: 0, totalProfit: 0, winningTradesCount: 0, winningContractsCount: 0,
+	expectancy: 0, totalCommission: 0, totalSwap: 0, totalProfit: 0, winningTradesCount: 0, winningContractsCount: 0,
 	largestWin: 0, avgWin: 0, stdDevWin: 0, avgWinDuration: 0, maxWinDuration: 0,
-	winningTradesCommission: 0, maxRunUp: 0, maxRunUpDateFrom: null, maxRunUpDateTo: null,
+	winningTradesCommission: 0, winningTradesSwap: 0, maxRunUp: 0, maxRunUpDateFrom: null, maxRunUpDateTo: null,
 	maxWinningStreak: 0, totalLoss: 0, losingTradesCount: 0, losingContractsCount: 0,
 	largestLoss: 0, avgLoss: 0, stdDevLoss: 0, avgLossDuration: 0, maxLossDuration: 0,
-	losingTradesCommission: 0, maxDrawdown: 0, maxDrawdownDateFrom: null, maxDrawdownDateTo: null,
+	losingTradesCommission: 0, losingTradesSwap: 0, maxDrawdown: 0, maxDrawdownDateFrom: null, maxDrawdownDateTo: null,
 	maxLosingStreak: 0, breakevenTradesCount: 0, breakevenContractsCount: 0,
 	totalTradingDays: 0, tradeFrequency: 0, winningDays: 0, losingDays: 0, breakevenDays: 0,
 	maxConsecutiveWinningDays: 0, maxConsecutiveLosingDays: 0,
@@ -79,12 +79,12 @@ export const defaultDashBoardResult: DashBoardResult = {
 export const defaultColumnVisibility: Record<string, boolean> = {
 	openDate: true, closeDate: true, symbol: true, type: true, lot: true,
 	openPrice: true, closePrice: true, profit: true, grossProfit: false,
-	commission: false, stopLoss: false, takeProfit: false, riskReward: true,
+	commission: false, swap: false, stopLoss: false, takeProfit: false, riskReward: true,
 	instrumentType: false,
 }
 
 export const defaultDailyColumnVisibility: Record<string, boolean> = {
 	lot: true, openDate: true, closeDate: true, symbol: true, type: true,
 	openPrice: true, closePrice: true, profit: true, grossProfit: false,
-	commission: false, stopLoss: false, takeProfit: false, riskReward: true,
+	commission: false, swap: false, stopLoss: false, takeProfit: false, riskReward: true,
 }

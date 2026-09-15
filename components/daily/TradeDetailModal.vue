@@ -31,7 +31,8 @@
                         </span>
                         <span class="text-secondary-xs text-muted ml-1">
                             ({{ $t('components.common.columns.headers.grossProfit') }}: {{ formatCurrency(trade.profit) }},
-                            {{ $t('components.common.columns.headers.commission') }}: {{ formatCurrency(trade.commission) }})
+                            {{ $t('components.common.columns.headers.commission') }}: {{ formatCurrency(trade.commission) }},
+                            {{ $t('components.common.columns.headers.swap') }}: {{ formatCurrency(trade.exchange) }})
                         </span>
                     </div>
                     <div>

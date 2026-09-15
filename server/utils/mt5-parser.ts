@@ -100,12 +100,13 @@ export function parseMT5Xls(
             continue;
         // console.log(openTime)
         const commissionValue = parseFloat((commission || '0').toString().replace(',', '.'));
+        const swapValue = parseFloat((swap || '0').toString().replace(',', '.'));
         const profitFromMT5 = parseFloat((profit || '0').toString().replace(',', '.'));
         
-        // MT5 fournit le profit NET (après commission)
-        // MT5 exporte la commission en négatif, donc on soustrait pour obtenir le profit BRUT
-        const grossProfit = round(profitFromMT5 - commissionValue, 2);
-        const netProfit = round(profitFromMT5, 2);
+        // MT5 fournit le profit BRUT (avant commission et swap)
+        // MT5 exporte la commission en négatif, donc on additionne pour obtenir le profit NET
+        const grossProfit = round(profitFromMT5, 2);
+        const netProfit = round(profitFromMT5 + commissionValue + swapValue, 2);
 
         // Parse dates
         const parsedOpenDate = parseMT5Date(openTime, effectiveImportMode, effectiveTimezone);
@@ -140,7 +141,8 @@ export function parseMT5Xls(
             stopLoss: parseFloat((stopLoss || '0').toString().replace(',', '.')),
             takeProfit: parseFloat((takeProfit || '0').toString().replace(',', '.')),
             commission: commissionValue,
-            exchange: parseFloat((swap || '0').toString().replace(',', '.')), // swap devient exchange
+            swap: swapValue,
+            exchange: parseFloat((swap || '0').toString().replace(',', '.')), // swap devient exchange (rétrocompatibilité)
             screenshotUrl: null,
         };
 

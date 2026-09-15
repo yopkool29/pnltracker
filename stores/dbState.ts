@@ -274,6 +274,18 @@ export const useDbStateStore = defineStore(
 				}
 				const df = dailyFiltersPerDb.value[dbName]
 				if (!df.lastFilterColumn) df.lastFilterColumn = 'symbol'
+				// Patch missing default keys (e.g. swap) into the existing columnVisibility
+				// in place. This is a one-time conditional mutation that stabilizes after
+				// the first run, unlike replacing the whole object which caused an
+				// infinite reactive loop. Returning df directly preserves nested v-model
+				// writes (showAdvancedFilters, accountIds, selectedMonth, ...).
+				if (df.columnVisibility) {
+					for (const key in defaultDailyColumnVisibility) {
+						if (df.columnVisibility[key] === undefined) {
+							df.columnVisibility[key] = defaultDailyColumnVisibility[key]
+						}
+					}
+				}
 				return df
 			},
 			set: (val) => {
@@ -322,10 +334,10 @@ export const useDbStateStore = defineStore(
 		const columnVisibility = computed({
 			get: () => {
 				const dbName = getCurrentDbName()
-				if (!columnVisibilityPerDb.value[dbName]) {
-					columnVisibilityPerDb.value[dbName] = { ...defaultColumnVisibility }
+				return {
+					...defaultColumnVisibility,
+					...(columnVisibilityPerDb.value[dbName] || {}),
 				}
-				return columnVisibilityPerDb.value[dbName]
 			},
 			set: (val) => {
 				const dbName = getCurrentDbName()

@@ -399,7 +399,7 @@ export const getTotalContracts = (trades: { lot: number }[]) => {
 /**
  * Calcule les métriques des trades gagnants
  */
-export const getWinningTradesMetrics = (trades: { profit: number; netProfit: number; lot: number; commission?: number; openDate: Date | string; closeDate: Date | string }[], useNet = true) => {
+export const getWinningTradesMetrics = (trades: { profit: number; netProfit: number; lot: number; commission?: number; exchange?: number; openDate: Date | string; closeDate: Date | string }[], useNet = true) => {
     const winners = trades.filter(t => (useNet ? t.netProfit : t.profit) > 0)
     
     if (winners.length === 0) {
@@ -412,7 +412,8 @@ export const getWinningTradesMetrics = (trades: { profit: number; netProfit: num
             stdDev: 0,
             avgDuration: 0,
             maxDuration: 0,
-            totalCommission: 0
+            totalCommission: 0,
+            totalSwap: 0
         }
     }
     
@@ -427,14 +428,15 @@ export const getWinningTradesMetrics = (trades: { profit: number; netProfit: num
         stdDev: getStdDev(profits, 2),
         avgDuration: getAvgTradeDuration(winners, 2),
         maxDuration: getMaxTradeDuration(winners, 2),
-        totalCommission: _round(winners.reduce((acc, t) => acc + (t.commission || 0), 0), 2)
+        totalCommission: _round(winners.reduce((acc, t) => acc + (t.commission || 0), 0), 2),
+        totalSwap: _round(winners.reduce((acc, t) => acc + (t.exchange || 0), 0), 2)
     }
 }
 
 /**
  * Calcule les métriques des trades perdants
  */
-export const getLosingTradesMetrics = (trades: { profit: number; netProfit: number; lot: number; commission?: number; openDate: Date | string; closeDate: Date | string }[], useNet = true) => {
+export const getLosingTradesMetrics = (trades: { profit: number; netProfit: number; lot: number; commission?: number; exchange?: number; openDate: Date | string; closeDate: Date | string }[], useNet = true) => {
     const losers = trades.filter(t => (useNet ? t.netProfit : t.profit) < 0)
     
     if (losers.length === 0) {
@@ -447,7 +449,8 @@ export const getLosingTradesMetrics = (trades: { profit: number; netProfit: numb
             stdDev: 0,
             avgDuration: 0,
             maxDuration: 0,
-            totalCommission: 0
+            totalCommission: 0,
+            totalSwap: 0
         }
     }
     
@@ -462,7 +465,8 @@ export const getLosingTradesMetrics = (trades: { profit: number; netProfit: numb
         stdDev: getStdDev(losses, 2),
         avgDuration: getAvgTradeDuration(losers, 2),
         maxDuration: getMaxTradeDuration(losers, 2),
-        totalCommission: _round(losers.reduce((acc, t) => acc + (t.commission || 0), 0), 2)
+        totalCommission: _round(losers.reduce((acc, t) => acc + (t.commission || 0), 0), 2),
+        totalSwap: _round(losers.reduce((acc, t) => acc + (t.exchange || 0), 0), 2)
     }
 }
 

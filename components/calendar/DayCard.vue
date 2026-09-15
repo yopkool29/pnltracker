@@ -31,8 +31,12 @@
                 </span>
             </div>
             <div v-if="day.commission" class="form-row">
-                <span class="stat-label-alt">Com:</span>
+                <span class="stat-label-alt">{{ $t('components.common.columns.headers.commission') }}:</span>
                 <span class="text-xs text-muted">{{ formatCurrency(day.commission) }}</span>
+            </div>
+            <div v-if="day.swap" class="form-row">
+                <span class="stat-label-alt">{{ $t('components.common.columns.headers.swap') }}:</span>
+                <span class="text-xs text-muted">{{ formatCurrency(day.swap) }}</span>
             </div>
         </div>
     </div>
@@ -46,6 +50,7 @@ interface CalendarDay {
     winrate: number
     pnl: number
     commission?: number
+    swap?: number
     screenshotCount: number
     hasDetailedNote: boolean
 }

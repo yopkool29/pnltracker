@@ -26,6 +26,7 @@ import {
     getTimeZoneFromSettings,
     formatDateKeyForGrouping,
 } from '~/utils/date-utils'
+import { formatDurationMinutes } from '~/utils/dates/duration'
 import {
     getPNL,
     getAPPT,
@@ -1668,6 +1669,9 @@ export const formatTradeTooltipField = (
         'side',
         'duration',
         'pnl',
+        'netProfit',
+        'profit',
+        'swap',
     ]
     if (!tradeFields.includes(field)) return ''
     const label = t(`components.dashboard.breakdown.trade_property.${field}`)
@@ -1689,13 +1693,19 @@ export const formatTradeTooltipField = (
         case 'side':
             return `${label}: ${tr.type}`
         case 'duration': {
-            const min = durationMin ?? 0
-            if (min < 60) return `${label}: ${min.toFixed(0)}m`
-            if (min < 1440) return `${label}: ${(min / 60).toFixed(1)}h`
-            return `${label}: ${(min / 1440).toFixed(1)}d`
+            const min = durationMin ?? (tr.closeDate && tr.openDate
+                ? (new Date(tr.closeDate).getTime() - new Date(tr.openDate).getTime()) / 60000
+                : 0)
+            return `${label}: ${formatDurationMinutes(min)}`
         }
         case 'pnl':
             return `${label}: ${formatCurrency(tr.profit)}`
+        case 'netProfit':
+            return `${label}: ${formatCurrency(tr.netProfit)}`
+        case 'profit':
+            return `${label}: ${formatCurrency(tr.profit)}`
+        case 'swap':
+            return `${label}: ${formatCurrency(tr.exchange || 0)}`
         default:
             return ''
     }

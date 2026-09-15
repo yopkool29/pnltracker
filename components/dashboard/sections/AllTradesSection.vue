@@ -52,6 +52,7 @@ const rows = computed<StatsRow[]>(() => [
 	{ label: 'components.dashboard.all_trades.winrate', value: result.value.winrate, format: 'percent' },
 	{ label: 'components.dashboard.all_trades.expectancy', value: result.value.expectancy, format: 'currency', valueClass: result.value.expectancy >= 0 ? 'profit-text' : 'loss-text' },
 	{ label: 'components.dashboard.all_trades.commission', value: result.value.totalCommission, format: 'currency' },
+	{ label: 'components.dashboard.all_trades.swap', value: result.value.totalSwap, format: 'currency' },
 	{ label: 'components.dashboard.all_trades.total_pnl', value: result.value.pnl, format: 'currency', valueClass: result.value.pnl >= 0 ? 'profit-text' : 'loss-text', borderTop: true },
 	// R-multiple metrics (affichés seulement si au moins un trade a un R calculable)
 	{ label: 'components.dashboard.all_trades.total_r', value: result.value.totalR, format: 'rMultiple', valueClass: rValueClass(result.value.totalR), borderTop: true, condition: result.value.tradesWithRMultiple > 0 },

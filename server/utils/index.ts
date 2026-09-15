@@ -42,6 +42,7 @@ export interface TradesImport {
     stopLoss: number;
     takeProfit: number;
     commission: number;
+    swap?: number;
     exchange: number;
     screenshotUrl: string | null;
     // Options-specific fields

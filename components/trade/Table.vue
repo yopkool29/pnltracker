@@ -420,6 +420,14 @@ const columns = [
         meta: addMeta('w-[100px]'),
     },
     {
+        id: 'swap',
+        accessorKey: 'exchange',
+        header: () => t('components.common.columns.headers.swap'),
+        cell: ({ row }) => formatCurrency(row.original.exchange || 0),
+        sortable: false,
+        meta: addMeta('w-[100px]'),
+    },
+    {
         id: 'stopLoss',
         accessorKey: 'stopLoss',
         header: () => t('components.common.columns.headers.stopLoss'),
