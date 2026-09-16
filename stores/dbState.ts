@@ -471,7 +471,7 @@ export const useDbStateStore = defineStore(
 				calendarFiltersPerDb, dashBoardResultPerDb, columnVisibilityPerDb,
 				showDetailedNotePerDb, lastViewedNoteIdPerDb, tradeChartTfPerDb,
 				tradeChartShowAdjacentPerDb, tradeChartShowAdjacentLinesPerDb,
-				chartSettingsPerDb,
+				tradeChartRthPerDb, chartSettingsPerDb,
 			]
 			for (const ref of perDbRefs) {
 				ref.value = Object.fromEntries(
@@ -489,7 +489,7 @@ export const useDbStateStore = defineStore(
 				calendarFiltersPerDb, dashBoardResultPerDb, columnVisibilityPerDb,
 				showDetailedNotePerDb, lastViewedNoteIdPerDb, tradeChartTfPerDb,
 				tradeChartShowAdjacentPerDb, tradeChartShowAdjacentLinesPerDb,
-				chartSettingsPerDb,
+				tradeChartRthPerDb, chartSettingsPerDb,
 			]
 			for (const ref of perDbRefs) {
 				ref.value = {}
@@ -517,6 +517,7 @@ export const useDbStateStore = defineStore(
 			tradeChartTfPerDb,
 			tradeChartShowAdjacentPerDb,
 			tradeChartShowAdjacentLinesPerDb,
+			tradeChartRthPerDb,
 			chartSettingsPerDb,
 			// Computed wrappers
 			lastViewedNoteId,
