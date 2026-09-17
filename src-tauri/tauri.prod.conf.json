@@ -39,7 +39,6 @@
     "targets": [
       "deb",
       "appimage",
-      "msi",
       "nsis"
     ],
     "icon": [
@@ -54,11 +53,6 @@
     "resources": [
       "runtime"
     ],
-    "windows": {
-      "wix": {
-        "language": "en-US"
-      }
-    },
     "linux": {
       "deb": {
         "desktopTemplate": "desktop-template.desktop"

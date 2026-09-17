@@ -49,9 +49,9 @@ jobs:
         env:
           PRISMA_ENGINES_MIRROR: 'https://binaries.prisma.sh'
 
-      - name: Build Tauri (MSI + NSIS)
+      - name: Build Tauri (NSIS)
         timeout-minutes: 15
-        run: pnpm tauri build --features desktop-production --config src-tauri/tauri.prod.conf.json --bundles msi,nsis
+        run: pnpm tauri build --features desktop-production --config src-tauri/tauri.prod.conf.json --bundles nsis
         env:
           PRISMA_ENGINES_MIRROR: 'https://binaries.prisma.sh'
 
@@ -60,7 +60,6 @@ jobs:
         with:
           name: pnltracker-windows
           path: |
-            src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/pnltracker-desktop.exe
 
@@ -68,7 +67,6 @@ jobs:
         if: github.event.inputs.upload_release == 'true' && github.event.inputs.version != ''
         run: |
           gh release upload ${{ github.event.inputs.version }} `
-            src-tauri/target/release/bundle/msi/*.msi `
             src-tauri/target/release/bundle/nsis/*.exe `
             --clobber --repo ${{ github.repository }}
         env:
