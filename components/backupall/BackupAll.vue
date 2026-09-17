@@ -366,6 +366,8 @@ interface ZipEntry {
 
 const { t } = useI18n()
 const { success: toastSuccess, error: toastError } = useAppToast()
+// Import/export results need to be read (counts, partial failures) — keep them longer on screen
+const RESULT_TOAST_DURATION = 5000
 const { fetchDatabases, databases } = useDatabase()
 const backupStore = useBackupStore()
 const { selectedDbIds } = storeToRefs(backupStore)
@@ -465,15 +467,15 @@ const onExport = async () => {
 		const failed = exportResults.value.filter(r => !r.success).length
 
 		if (failed === 0) {
-			toastSuccess(t('pages.backup_restore.export_success', { count: succeeded }))
+			toastSuccess(t('pages.backup_restore.export_success', { count: succeeded }), undefined, RESULT_TOAST_DURATION)
 		} else if (succeeded > 0) {
-			toastSuccess(t('pages.backup_restore.export_partial', { success: succeeded, total: exportResults.value.length }))
+			toastSuccess(t('pages.backup_restore.export_partial', { success: succeeded, total: exportResults.value.length }), undefined, RESULT_TOAST_DURATION)
 		} else {
-			toastError(t('common.title.error'), t('pages.backup_restore.export_failed'))
+			toastError(t('common.title.error'), t('pages.backup_restore.export_failed'), RESULT_TOAST_DURATION)
 		}
 	} catch (error) {
 		console.error('Export all failed:', error)
-		toastError(t('common.title.error'), t('pages.backup_restore.export_failed'))
+		toastError(t('common.title.error'), t('pages.backup_restore.export_failed'), RESULT_TOAST_DURATION)
 	} finally {
 		isExporting.value = false
 		exportProgress.value = { current: 0, total: 0 }
@@ -546,11 +548,11 @@ const onImport = async () => {
 		const failed = response.summary.failed
 
 		if (failed === 0) {
-			toastSuccess(t('pages.backup_restore.import_success', { count: succeeded }))
+			toastSuccess(t('pages.backup_restore.import_success', { count: succeeded }), undefined, RESULT_TOAST_DURATION)
 		} else if (succeeded > 0) {
-			toastSuccess(t('pages.backup_restore.import_partial', { success: succeeded, total: response.summary.total }))
+			toastSuccess(t('pages.backup_restore.import_partial', { success: succeeded, total: response.summary.total }), undefined, RESULT_TOAST_DURATION)
 		} else {
-			toastError(t('common.title.error'), t('pages.backup_restore.import_failed'))
+			toastError(t('common.title.error'), t('pages.backup_restore.import_failed'), RESULT_TOAST_DURATION)
 		}
 
 		// Recharger la liste des DB et rescanner le répertoire
@@ -558,7 +560,7 @@ const onImport = async () => {
 		await scanBackupDir()
 	} catch (error) {
 		console.error('Import all failed:', error)
-		toastError(t('common.title.error'), t('pages.backup_restore.import_failed'))
+		toastError(t('common.title.error'), t('pages.backup_restore.import_failed'), RESULT_TOAST_DURATION)
 	} finally {
 		isImporting.value = false
 		importProgress.value = { current: 0, total: 0 }

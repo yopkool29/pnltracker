@@ -1,45 +1,45 @@
 export const useAppToast = () => {
     const toast = useToast()
 
-    const DURATION = 1000
+    const DURATION = 2000
 
-    const success = (title: string, description?: string) => {
+    const success = (title: string, description?: string, duration: number = DURATION) => {
         toast.add({
             title,
             description,
             icon: 'i-heroicons-check-circle',
             color: 'success',
-            duration: DURATION,
+            duration,
         })
     }
 
-    const error = (title: string, description?: string) => {
+    const error = (title: string, description?: string, duration: number = DURATION) => {
         toast.add({
             title,
             description,
             icon: 'i-heroicons-exclamation-circle',
             color: 'error',
-            duration: DURATION,
+            duration,
         })
     }
 
-    const info = (title: string, description?: string) => {
+    const info = (title: string, description?: string, duration: number = DURATION) => {
         toast.add({
             title,
             description,
             icon: 'i-heroicons-information-circle',
             color: 'primary',
-            duration: DURATION,
+            duration,
         })
     }
 
-    const warning = (title: string, description?: string) => {
+    const warning = (title: string, description?: string, duration: number = DURATION) => {
         toast.add({
             title,
             description,
             icon: 'i-heroicons-exclamation-triangle',
             color: 'warning',
-            duration: DURATION,
+            duration,
         })
     }
 
