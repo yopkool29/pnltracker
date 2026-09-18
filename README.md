@@ -40,7 +40,7 @@
 
 ## 🚀 Getting Started
 
-> 📦 Pre-built Linux binaries are available on the [GitHub Releases](https://github.com/yopkool29/pnlTracker/releases) page. Windows and macOS builds will follow.
+> 📦 Pre-built Linux & Windows binaries are available on the [GitHub Releases](https://github.com/yopkool29/pnlTracker/releases) page. MacOS builds will follow.
 
 ### Prerequisites
 
