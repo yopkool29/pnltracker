@@ -5,7 +5,7 @@ import { TextDecoder } from 'util'
 import { parseStandardCSV } from '../../server/utils/standard-csv-parser'
 import { ImportMode } from '../../utils/date-utils'
 
-const filePath = path.resolve(__dirname, '../../data/tests/mt5-standard-1214585.csv')
+const filePath = path.resolve(__dirname, '../../data/tests/mt5-standard-9988776.csv')
 
 const csvBuffer = fs.readFileSync(filePath)
 // Auto-détecter UTF-16LE (null bytes) sinon fallback UTF-8
