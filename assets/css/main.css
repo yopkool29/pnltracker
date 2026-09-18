@@ -11,6 +11,10 @@
     
     /* Fond légèrement grisé en mode light */
     --ui-bg: #f2f2f2;
+    /* Fond élevé (cards, panels) = blanc comme bg-white hardcodé */
+    --ui-bg-elevated: #ffffff;
+    /* Bordure = border-gray-200 hardcodé */
+    --ui-border: #e5e7eb;
 
     /* Texte principal moins chargé en mode light */
     --ui-text-highlighted: #334155;
@@ -27,13 +31,11 @@ html.dark {
 
 body {
     background: linear-gradient(to bottom, #f1f1f1, #e0e0e0);
-    background-attachment: fixed;
     min-height: 100vh;
 }
 
 .dark body {
     background: linear-gradient(to bottom, #1f1f1f, #16161f);
-    background-attachment: fixed;
 }
 
 .dark {
@@ -45,7 +47,15 @@ body {
     --ui-error: var(--ui-color-error-300);
     
     /* Fond pour le mode dark */
-    --ui-bg: #1f1f2f;
+    --ui-bg: #1f1c28;
+    /* Fond élevé (cards, panels) = bg-gray-800 hardcodé */
+    --ui-bg-elevated: #1f2937;
+    /* Fond muted (sous-barre, sidebar) = bg-gray-50/900 hardcodé */
+    --ui-bg-muted: #1a1825;
+    /* Fond accentué (hover, sélection) = bg-gray-700 hardcodé */
+    --ui-bg-accented: #2a2a3a;
+    /* Bordure = border-gray-700 hardcodé */
+    --ui-border: #2a2a3a;
 
     /* Restaurer la couleur de texte par défaut en mode dark */
     --ui-text-highlighted: var(--ui-color-neutral-100);
@@ -85,6 +95,80 @@ html.dark.dark-gold {
     --ui-color-primary-950: #451a03;
 }
 
+/* Header dark en mode light (light et light-blue) pour créer du contraste */
+html:not(.dark) header {
+    --ui-bg: #111b33;
+    --ui-bg-elevated: #1a2744;
+    --ui-bg-accented: #1a2744;
+    --ui-text: #cbd5e1;
+    --ui-text-highlighted: #f1f5f9;
+    --ui-text-muted: #94a3b8;
+    --ui-text-dimmed: #64748b;
+    --ui-text-toned: #94a3b8;
+    --ui-border: rgba(255, 255, 255, 0.1);
+    --ui-border-muted: rgba(255, 255, 255, 0.08);
+    --ui-border-accented: rgba(255, 255, 255, 0.15);
+    --ui-primary: var(--ui-color-primary-300);
+    background-color: #111b33;
+}
+
+html:not(.dark) header .header-navbar {
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Logo dark version dans le header en mode light */
+html:not(.dark) header .app-logo .logo-light {
+    display: none !important;
+}
+
+html:not(.dark) header .app-logo .logo-dark {
+    display: inline-block !important;
+}
+
+/* Inverser l'icône GitHub dans le header en mode light */
+html:not(.dark) header img[src*="github.svg"] {
+    filter: invert(1);
+}
+
+/* Restore les couleurs light d'origine dans la sub-bar (QuickNav, NetGrossToggle, etc.) */
+html:not(.dark) header .header-subbar {
+    --ui-bg: #f2f2f2;
+    --ui-bg-elevated: #ffffff;
+    --ui-bg-accented: #e5e7eb;
+    --ui-text: #334155;
+    --ui-text-highlighted: #334155;
+    --ui-text-muted: #64748b;
+    --ui-text-dimmed: #94a3b8;
+    --ui-text-toned: #475569;
+    --ui-border: #e5e7eb;
+    --ui-border-muted: #e5e7eb;
+    --ui-border-accented: #d1d5db;
+}
+
+/* Active link colors dans le header dark en mode light */
+html:not(.dark) header .header-desktop-link-active {
+    @apply bg-primary/10 text-primary;
+}
+
+html:not(.dark) header .header-desktop-link-active:hover {
+    @apply bg-primary/20 text-primary;
+}
+
+html:not(.dark) header .header-mobile-link-active {
+    @apply bg-primary/10 text-primary;
+}
+
+html:not(.dark) header .header-mobile-link-active:hover {
+    @apply bg-primary/20 text-primary;
+}
+
+html:not(.dark) header .header-subbar .logwindow > div:first-child a,
+html:not(.dark) header .header-subbar .logwindow > div:first-child span {
+    color: #475569;
+}
+
 button[role='combobox'],
 button[role='tab'] {
     user-select: none;
@@ -99,7 +183,7 @@ select {
 }
 
 .log-normal-text {
-    @apply text-gray-900 dark:text-gray-100;
+    @apply text-highlighted;
 }
 
 .log-info-text {
@@ -107,7 +191,7 @@ select {
 }
 
 .log-debug-text {
-    @apply text-gray-900 dark:text-gray-100;
+    @apply text-highlighted;
 }
 
 .log-warn-text {
@@ -122,7 +206,7 @@ select {
     appearance: textfield-multiline;
     -moz-appearance: textfield-multiline;
     -webkit-appearance: textarea;
-    @apply border-[1px] border-solid border-gray-400 dark:border-gray-600 shadow-none overflow-auto p-1 w-full h-[300px] font-normal text-sm bg-gray-100 dark:bg-gray-800;
+    @apply border-[1px] border-solid border-accented shadow-none overflow-auto p-1 w-full h-[300px] font-normal text-sm bg-elevated;
 }
 
 /* Fix pour les tooltips qui ne fonctionnent pas avec les modales */
@@ -175,36 +259,36 @@ select {
 }
 
 .header-desktop-link {
-    @apply flex flex-col items-center px-3 py-2 rounded-lg text-gray-600 dark:text-gray-200 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-primary-500 dark:hover:text-primary-300;
+    @apply flex flex-col items-center px-3 py-2 rounded-lg text-default transition-colors hover:bg-accented hover:text-primary-500 dark:hover:text-primary-300;
 }
 
 .header-desktop-link-active {
-    @apply bg-gray-200 text-gray-900 font-medium dark:bg-primary/10 dark:text-primary;
+    @apply bg-accented text-highlighted font-medium dark:bg-primary/10 dark:text-primary;
 }
 
 .header-desktop-link-active:hover {
-    @apply bg-gray-300 text-gray-900 dark:bg-primary/20 dark:text-primary;
+    @apply bg-accented text-highlighted dark:bg-primary/20 dark:text-primary;
 }
 
 .header-mobile-link {
-    @apply px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center cursor-pointer;
+    @apply px-4 py-2 rounded-md hover:bg-elevated flex items-center cursor-pointer;
 }
 
 .header-mobile-link-active {
-    @apply bg-gray-200 text-gray-900 dark:bg-primary/10 dark:text-primary;
+    @apply bg-accented text-highlighted dark:bg-primary/10 dark:text-primary;
 }
 
 .header-mobile-link-active:hover {
-    @apply bg-gray-300 text-gray-900 dark:bg-primary/20;
+    @apply bg-accented text-highlighted dark:bg-primary/20;
 }
 
 /* Dashboard card styles */
 .dashboard-card {
-    @apply bg-white dark:bg-gray-800 rounded shadow flex items-center justify-center gap-2 py-2;
+    @apply bg-elevated rounded shadow flex items-center justify-center gap-2 py-2;
 }
 
 .dashboard-card-label {
-    @apply text-xs font-medium text-gray-500 dark:text-gray-400;
+    @apply text-xs font-medium text-muted;
 }
 
 .dashboard-card-value {
@@ -302,7 +386,7 @@ select {
 }
 
 .stat-label-alt {
-    @apply text-xs text-gray-400;
+    @apply text-xs text-muted;
 }
 
 .stat-value {
@@ -363,17 +447,17 @@ select {
 
 /* Form field help text */
 .field-help-text {
-    @apply mt-1 text-xs font-medium text-gray-500 dark:text-gray-400;
+    @apply mt-1 text-xs font-medium text-muted;
 }
 
 /* Screenshot container */
 .screenshot-container {
-    @apply mt-6 p-4 border rounded-md border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800;
+    @apply mt-6 p-4 border rounded-md border-default bg-elevated;
 }
 
 /* Section separators */
 .section-separator {
-    @apply border-b border-gray-200 dark:border-gray-700 pb-4;
+    @apply border-b border-default pb-4;
 }
 
 /* Centering utilities */
@@ -388,19 +472,19 @@ select {
 
 /* Secondary text */
 .text-secondary {
-    @apply text-gray-500 dark:text-gray-400;
+    @apply text-muted;
 }
 
 .text-secondary-sm {
-    @apply text-sm text-gray-500 dark:text-gray-400;
+    @apply text-sm text-muted;
 }
 
 .text-secondary-xs {
-    @apply text-xs text-gray-500 dark:text-gray-400;
+    @apply text-xs text-muted;
 }
 
 .description-text {
-    @apply text-sm text-gray-500 dark:text-gray-400 mt-1;
+    @apply text-sm text-muted mt-1;
 }
 
 /* Date input standard */
@@ -433,7 +517,7 @@ select {
 
 /* Calendar cell states */
 .calendar-cell-positive {
-    @apply border-green-500 dark:border-green-600 shadow-sm hover:shadow-md dark:hover:shadow-green-900/50 transition-all;
+    @apply border-green-500 dark:border-green-600;
     background: linear-gradient(to bottom right, rgb(220, 252, 231), rgb(187, 247, 208));
 }
 
@@ -450,7 +534,7 @@ select {
 }
 
 .calendar-cell-negative {
-    @apply border-red-500 dark:border-red-600 shadow-sm hover:shadow-md dark:hover:shadow-red-900/50 transition-all;
+    @apply border-red-500 dark:border-red-600;
     background: linear-gradient(to bottom right, rgb(254, 226, 226), rgb(254, 202, 202));
 }
 
@@ -467,7 +551,7 @@ select {
 }
 
 .calendar-cell-neutral {
-    @apply border-gray-400 dark:border-gray-600 shadow-sm hover:shadow-md transition-all;
+    @apply border-accented;
     background: linear-gradient(to bottom right, rgb(249, 250, 251), rgb(229, 231, 235));
 }
 
@@ -485,7 +569,7 @@ select {
 
 /* Calendar day cell states (lighter version for individual days) */
 .calendar-day-positive {
-    @apply border-green-400 dark:border-green-700 shadow-sm hover:shadow transition-all;
+    @apply border-green-400 dark:border-green-700;
     background: linear-gradient(to bottom right, rgb(240, 253, 244), rgb(220, 252, 231));
 }
 
@@ -502,7 +586,7 @@ select {
 }
 
 .calendar-day-negative {
-    @apply border-red-400 dark:border-red-700 shadow-sm hover:shadow transition-all;
+    @apply border-red-400 dark:border-red-700;
     background: linear-gradient(to bottom right, rgb(254, 242, 242), rgb(254, 226, 226));
 }
 
@@ -519,7 +603,7 @@ select {
 }
 
 .calendar-day-neutral {
-    @apply border-gray-300 dark:border-gray-700 shadow-sm hover:shadow transition-all;
+    @apply border-default;
     background: linear-gradient(to bottom right, rgb(255, 255, 255), rgb(243, 244, 246));
 }
 

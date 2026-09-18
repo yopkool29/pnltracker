@@ -46,6 +46,12 @@ describe('Database Integration - Notes CRUD', () => {
 		expect(found?.content).toBe(createdNote?.content)
 	})
 
+	it('should fetch notes with a bounded date range and pagination', async () => {
+		const result = await $fetch(`/api/notes?date_from=${encodeURIComponent('2024-01-15T00:00:00.000Z')}&date_to=${encodeURIComponent('2024-01-15T23:59:59.999Z')}&limit=1&offset=0`) as NoteType[]
+		expect(result).toHaveLength(1)
+		expect(result[0].id).toBe(createdNote?.id)
+	})
+
 	it('should fetch note dates and find our date', async () => {
 		const { fetchNoteDates } = useNotes()
 		const result = await fetchNoteDates() as Array<{ date: string }>
@@ -53,6 +59,37 @@ describe('Database Integration - Notes CRUD', () => {
 		expect(result.length).toBeGreaterThan(0)
 		const dates = result.map((note) => note.date.split('T')[0])
 		expect(dates).toContain(testDate)
+	})
+
+	it('should append AI analyses to one reserved MCP journal note', async () => {
+		const first = await $fetch('/api/mcp/ai-journal', {
+			method: 'POST',
+			body: { title: 'First analysis', content: 'Bullish context.' },
+		}) as { note: NoteType }
+		const second = await $fetch('/api/mcp/ai-journal', {
+			method: 'POST',
+			body: { title: 'Second analysis', content: 'Bearish invalidation.' },
+		}) as { note: NoteType }
+
+		expect(second.note.id).toBe(first.note.id)
+		const notes = await $fetch('/api/notes?date=1980-01-01') as NoteType[]
+		const journals = notes.filter(note => new Date(note.date).getTime() === Date.UTC(1980, 0, 1))
+		expect(journals).toHaveLength(1)
+		expect(journals[0].content).toContain('# Journal des analyses IA')
+		expect(journals[0].content).toContain('## First analysis')
+		expect(journals[0].content).toContain('Bullish context.')
+		expect(journals[0].content).toContain('---')
+		expect(journals[0].content).toContain('## Second analysis')
+		expect(journals[0].content).toContain('Bearish invalidation.')
+
+		const { updateNote } = useNotes()
+		const manuallyUpdated = await updateNote(first.note.id, {
+			date: first.note.date,
+			content: `${journals[0].content}\n\nManual edit.`,
+			subtitle: 'Analyse IA',
+		})
+		expect(manuallyUpdated.content).toContain('Manual edit.')
+		expect(manuallyUpdated.metadata).toEqual({ subtitle: 'Analyse IA' })
 	})
 
 	it('should update a note', async () => {

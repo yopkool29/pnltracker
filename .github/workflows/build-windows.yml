@@ -15,19 +15,22 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+          cache: 'pnpm'
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -41,12 +44,14 @@ jobs:
           pnpm prisma generate --schema=prisma/data/schema.prisma
 
       - name: Build Nuxt + prepare Tauri runtime
+        timeout-minutes: 15
         run: pnpm tauri:prepare
         env:
           PRISMA_ENGINES_MIRROR: 'https://binaries.prisma.sh'
 
-      - name: Build Tauri (MSI + NSIS)
-        run: pnpm tauri build --features desktop-production --config src-tauri/tauri.prod.conf.json
+      - name: Build Tauri (NSIS)
+        timeout-minutes: 15
+        run: pnpm tauri build --features desktop-production --config src-tauri/tauri.prod.conf.json --bundles nsis
         env:
           PRISMA_ENGINES_MIRROR: 'https://binaries.prisma.sh'
 
@@ -55,14 +60,25 @@ jobs:
         with:
           name: pnltracker-windows
           path: |
-            src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/pnltracker-desktop.exe
+
+      - name: Create release if missing
+        if: github.event.inputs.upload_release == 'true' && github.event.inputs.version != ''
+        shell: bash
+        run: |
+          gh release view "${{ github.event.inputs.version }}" --repo "${{ github.repository }}" >/dev/null 2>&1 || \
+            gh release create "${{ github.event.inputs.version }}" \
+              --title "PnlTracker ${{ github.event.inputs.version }}" \
+              --generate-notes \
+              --repo "${{ github.repository }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload to GitHub Release
         if: github.event.inputs.upload_release == 'true' && github.event.inputs.version != ''
         run: |
           gh release upload ${{ github.event.inputs.version }} `
-            src-tauri/target/release/bundle/msi/*.msi `
             src-tauri/target/release/bundle/nsis/*.exe `
             --clobber --repo ${{ github.repository }}
         env:

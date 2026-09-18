@@ -2,6 +2,7 @@
     <select
         :id="props.id"
         :class="selectClasses"
+        :style="selectStyle"
         :disabled="props.disabled"
         :value="props.modelValue"
         @change="onChange"
@@ -14,6 +15,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { usePluginTheme } from './usePluginTheme'
+
 interface SelectOption {
     value: string | number | null
     label: string
@@ -58,9 +62,16 @@ const sizeClasses = {
     lg: 'px-4 py-3 text-base',
 }
 
+const { isDark } = usePluginTheme()
+
+const selectStyle = computed(() => ({
+    backgroundColor: isDark() ? '#1f2937' : '#ffffff',
+    color: isDark() ? '#e5e7eb' : '#111827',
+    borderColor: isDark() ? '#374151' : '#d1d5db',
+}))
+
 const selectClasses = [
-    'w-full rounded-md border border-gray-300 dark:border-gray-600',
-    'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100',
+    'w-full rounded-md border',
     'focus:outline-none focus:border-primary',
     'disabled:cursor-not-allowed disabled:opacity-75',
     sizeClasses[props.size],

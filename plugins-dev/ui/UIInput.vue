@@ -7,12 +7,12 @@
             :disabled="props.disabled"
             @change="props.onChange"
         />
-        <div 
+        <div
             :class="[
                 'flex items-center justify-center',
                 'px-4 py-2 rounded-md font-medium text-sm',
                 'cursor-pointer transition-colors duration-200',
-                'border border-gray-300 dark:border-gray-600',
+                'border',
                 sizeClass,
                 colorClass,
                 variantClass,
@@ -31,6 +31,7 @@
         :id="props.id"
         :type="props.type"
         :class="inputClasses"
+        :style="inputStyle"
         :disabled="props.disabled"
         :value="props.modelValue"
         @input="onInput"
@@ -81,7 +82,7 @@ const colorClasses = {
 
 const variantClasses = {
     solid: '',
-    ghost: 'file:bg-transparent file:hover:bg-gray-100 dark:file:hover:bg-gray-800',
+    ghost: 'file:bg-transparent file:hover:bg-elevated',
 }
 
 const sizeClasses = {
@@ -97,7 +98,13 @@ const sizeClass = sizeClasses[props.size]
 const { isDark } = usePluginTheme()
 
 const fileStyle = computed(() => ({
-    color: isDark() ? '#1f1f2f' : '#ffffff',
+    color: isDark() ? '#1f1c28' : '#ffffff',
+}))
+
+const inputStyle = computed(() => ({
+    backgroundColor: isDark() ? '#1f2937' : '#ffffff',
+    color: isDark() ? '#e5e7eb' : '#111827',
+    borderColor: isDark() ? '#374151' : '#d1d5db',
 }))
 
 const inputSizeClasses = {
@@ -107,9 +114,7 @@ const inputSizeClasses = {
 }
 
 const inputClasses = [
-    'w-full rounded-md border border-gray-300 dark:border-gray-600',
-    'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100',
-    'placeholder-gray-400 dark:placeholder-gray-500',
+    'w-full rounded-md border',
     'focus:outline-none focus:border-primary',
     'disabled:cursor-not-allowed disabled:opacity-75',
     inputSizeClasses[props.size],

@@ -1,8 +1,8 @@
 <template>
     <div class="flex flex-col min-h-28">
         <div class="flex items-center gap-1">
-            <div class="font-bold text-lg text-gray-600 dark:text-gray-300"
-                :class="{ 'text-gray-400': !day.isCurrentMonth }">
+            <div class="font-bold text-lg text-default"
+                :class="{ 'text-dimmed': !day.isCurrentMonth }">
                 {{ day.dayNumber }}
             </div>
             <div v-if="day.screenshotCount > 0" class="flex items-center">
@@ -31,8 +31,12 @@
                 </span>
             </div>
             <div v-if="day.commission" class="form-row">
-                <span class="stat-label-alt">Com:</span>
-                <span class="text-xs text-gray-500">{{ formatCurrency(day.commission) }}</span>
+                <span class="stat-label-alt">{{ $t('components.common.columns.headers.commission') }}:</span>
+                <span class="text-xs text-muted">{{ formatCurrency(day.commission) }}</span>
+            </div>
+            <div v-if="day.swap" class="form-row">
+                <span class="stat-label-alt">{{ $t('components.common.columns.headers.swap') }}:</span>
+                <span class="text-xs text-muted">{{ formatCurrency(day.swap) }}</span>
             </div>
         </div>
     </div>
@@ -46,6 +50,7 @@ interface CalendarDay {
     winrate: number
     pnl: number
     commission?: number
+    swap?: number
     screenshotCount: number
     hasDetailedNote: boolean
 }

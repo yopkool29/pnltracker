@@ -8,15 +8,28 @@
         <!-- Error Alert -->
         <CommonAlertBox :success-str="successStr" :error-str="errorStr" />
 
+        <!-- Header avec bouton backup/restore (toujours visible) -->
+        <div class="flex items-center justify-between mb-4">
+            <h2 v-if="databases.length > 0" class="text-xl font-semibold">{{ $t('pages.select_database.existing_databases') }}</h2>
+            <UButton
+                size="sm"
+                color="primary"
+                variant="outline"
+                icon="i-lucide-archive"
+                @click="navigateTo('/backup-restore')"
+            >
+                {{ $t('pages.select_database.backup_restore_all') }}
+            </UButton>
+        </div>
+
         <!-- Database List -->
         <div v-if="databases.length > 0" class="space-y-4">
-            <h2 class="text-xl font-semibold mb-4">{{ $t('pages.select_database.existing_databases') }}</h2>
 
             <div class="grid gap-3">
                 <UCard
                     v-for="db in databases"
                     :key="db.id"
-                    class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    class="cursor-pointer hover:bg-elevated transition-colors"
                     :class="{ 'ring-2 ring-primary': selectedDatabaseId === db.id }"
                     @click="selectedDatabaseId = db.id"
                     @dblclick="handleDoubleClick(db.id)"
@@ -26,7 +39,7 @@
                             <UIcon name="i-heroicons-circle-stack" class="text-2xl text-primary" />
                             <div class="flex-1">
                                 <h3 class="font-semibold">{{ db.displayName }}</h3>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ db.name }}</p>
+                                <p class="text-sm text-muted">{{ db.name }}</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-2">
@@ -47,25 +60,25 @@
             </div>
 
             <div class="flex gap-3">
-                <UButton size="lg" color="neutral" variant="outline" block @click="handleCancel">
-                    {{ $t('common.actions.cancel') }}
-                </UButton>
                 <UButton size="lg" color="primary" block :disabled="!selectedDatabaseId" :loading="isSelecting" @click="handleSelectDatabase">
                     {{ $t('pages.select_database.continue') }}
+                </UButton>
+                <UButton size="lg" color="neutral" variant="outline" block @click="handleCancel">
+                    {{ $t('common.actions.cancel') }}
                 </UButton>
             </div>
 
             <div class="flex items-center gap-4 my-4">
-                <div class="flex-1 h-px bg-gray-300 dark:bg-gray-600"></div>
-                <span class="text-sm text-gray-500 dark:text-gray-400">{{ $t('pages.select_database.or') }}</span>
-                <div class="flex-1 h-px bg-gray-300 dark:bg-gray-600"></div>
+                <div class="flex-1 h-px bg-default"></div>
+                <span class="text-sm text-muted">{{ $t('pages.select_database.or') }}</span>
+                <div class="flex-1 h-px bg-default"></div>
             </div>
         </div>
 
         <!-- No Databases Message -->
         <div v-else class="text-center py-8">
-            <UIcon name="i-heroicons-circle-stack" class="text-6xl text-gray-300 dark:text-gray-600 mb-4" />
-            <p class="text-gray-600 dark:text-gray-400 mb-6">
+            <UIcon name="i-heroicons-circle-stack" class="text-6xl text-dimmed mb-4" />
+            <p class="text-muted mb-6">
                 {{ $t('pages.select_database.no_databases') }}
             </p>
         </div>
@@ -77,9 +90,9 @@
             </UButton>
 
             <div v-if="databases.length > 0" class="flex items-center gap-4 my-4">
-                <div class="flex-1 h-px bg-gray-300 dark:bg-gray-600"></div>
-                <span class="text-sm text-gray-500 dark:text-gray-400">{{ $t('pages.select_database.or') }}</span>
-                <div class="flex-1 h-px bg-gray-300 dark:bg-gray-600"></div>
+                <div class="flex-1 h-px bg-default"></div>
+                <span class="text-sm text-muted">{{ $t('pages.select_database.or') }}</span>
+                <div class="flex-1 h-px bg-default"></div>
             </div>
 
             <UButton
@@ -108,7 +121,7 @@
         >
             <template #content>
                 <div class="space-y-4">
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                    <p class="text-sm text-muted">
                         {{ $t('pages.select_database.delete_confirmation') }}
                     </p>
 
@@ -232,7 +245,15 @@ const handleSelectDatabase = async () => {
         await updateUserSettings({ defaultDatabaseId: selectedDatabaseId.value })
         
         userStore.triggerDataRefresh()
-        router.push('/dashboard')
+
+        // Vérifier si la base sélectionnée a des comptes
+        // Si non, rediriger vers la page getting-started au lieu du dashboard
+        const accounts = await $fetch('/api/account').catch(() => [])
+        if (Array.isArray(accounts) && accounts.length === 0) {
+            router.push('/getting-started')
+        } else {
+            router.push('/dashboard')
+        }
     } catch (error) {
         const { stopLoading } = useGlobalLoading()
         stopLoading()

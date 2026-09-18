@@ -11,8 +11,8 @@
             <UForm :state="formState" autocomplete="off">
                 <div class="space-y-6">
                     <!-- Section Interface -->
-                    <div class="section-separator">
-                        <h3 class="section-subtitle-lg">{{ $t('components.settings.options.interface_section') }}</h3>
+                    <fieldset class="border border-default rounded-lg p-4 space-y-4">
+                        <legend class="px-2 text-sm font-semibold text-secondary">{{ $t('components.settings.options.interface_section') }}</legend>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <UFormField name="noteNewline" class="w-full">
                                 <UCheckbox
@@ -73,7 +73,23 @@
                             </UFormField>
 
                         </div>
-                    </div>
+                    </fieldset>
+
+                    <!-- Section Police de caractere -->
+                    <fieldset class="border border-default rounded-lg p-4 space-y-4">
+                        <legend class="px-2 text-sm font-semibold text-secondary">{{ $t('components.settings.options.font_section') }}</legend>
+                        <UFormField name="fontFamily" :label="$t('components.settings.options.font_family')">
+                            <USelect
+                                v-model="formState.fontFamily"
+                                :items="fontFamilyOptions"
+                                size="md"
+                                class="w-48"
+                            />
+                            <template #description>
+                                <span class="text-sm text-secondary">{{ $t('components.settings.options.font_family_desc') }}</span>
+                            </template>
+                        </UFormField>
+                    </fieldset>
 
                     <!-- Section Détail du trade -->
                     <div class="section-separator">
@@ -93,40 +109,64 @@
                                     :description="$t('components.settings.options.show_detailed_note_desc')"
                                 />
                             </UFormField>
-                            <UFormField name="polygonApiKey" :label="$t('components.settings.options.polygon_api_key')" class="w-lg">
-                                <div class="flex gap-2">
-                                    <UInput
-                                        v-model="formState.polygonApiKey"
-                                        class="flex-1"
-                                        :type="showPolygonKey ? 'text' : 'password'"
+                            <fieldset class="border border-default rounded-lg p-4 mt-4 space-y-4">
+                                <legend class="px-2 text-sm font-semibold text-secondary">{{ $t('components.settings.options.polygon_section') }}</legend>
+                                <UFormField name="polygonApiKey" :label="$t('components.settings.options.polygon_api_key')" class="w-lg">
+                                    <CommonCopyableInput
+                                        :model-value="formState.polygonApiKey"
+                                        type="password"
                                         placeholder="polygon_api_key"
                                         autocomplete="off"
+                                        @update:model-value="formState.polygonApiKey = $event"
                                     />
+                                    <template #description>
+                                        <span class="text-sm text-secondary">{{ $t('components.settings.options.polygon_api_key_desc') }}</span>
+                                    </template>
+                                </UFormField>
+                                <UFormField name="polygonRequestDelayMs" :label="$t('components.settings.options.polygon_request_delay')" class="w-lg">
+                                    <UInput
+                                        v-model="formState.polygonRequestDelayMs"
+                                        type="number"
+                                        class="w-32"
+                                    />
+                                    <template #description>
+                                        <span class="text-sm text-secondary">{{ $t('components.settings.options.polygon_request_delay_desc') }}</span>
+                                    </template>
+                                </UFormField>
+                                <UFormField name="polygonMaxRetries" :label="$t('components.settings.options.polygon_max_retries')" class="w-lg">
+                                    <UInput
+                                        v-model="formState.polygonMaxRetries"
+                                        type="number"
+                                        class="w-32"
+                                    />
+                                    <template #description>
+                                        <span class="text-sm text-secondary">{{ $t('components.settings.options.polygon_max_retries_desc') }}</span>
+                                    </template>
+                                </UFormField>
+                                <UFormField name="polygonCacheRefreshMinutes" :label="$t('components.settings.options.polygon_cache_refresh')" class="w-lg">
+                                    <UInput
+                                        v-model="formState.polygonCacheRefreshMinutes"
+                                        type="number"
+                                        class="w-32"
+                                    />
+                                    <template #description>
+                                        <span class="text-sm text-secondary">{{ $t('components.settings.options.polygon_cache_refresh_desc') }}</span>
+                                    </template>
+                                </UFormField>
+                                <UFormField :label="$t('components.settings.options.polygon_cache')" class="w-lg">
                                     <UButton
                                         color="neutral"
                                         variant="soft"
-                                        @click="showPolygonKey = !showPolygonKey"
+                                        :loading="clearingCache"
+                                        @click="onClearPolygonCache"
                                     >
-                                        {{ showPolygonKey ? $t('components.settings.options.hide') : $t('components.settings.options.show') }}
+                                        {{ $t('components.settings.options.polygon_cache_clear') }}
                                     </UButton>
-                                </div>
-                                <template #description>
-                                    <span class="text-sm text-secondary">{{ $t('components.settings.options.polygon_api_key_desc') }}</span>
-                                </template>
-                            </UFormField>
-                            <UFormField :label="$t('components.settings.options.polygon_cache')" class="w-lg">
-                                <UButton
-                                    color="neutral"
-                                    variant="soft"
-                                    :loading="clearingCache"
-                                    @click="onClearPolygonCache"
-                                >
-                                    {{ $t('components.settings.options.polygon_cache_clear') }}
-                                </UButton>
-                                <template #description>
-                                    <span class="text-sm text-secondary">{{ $t('components.settings.options.polygon_cache_desc') }}</span>
-                                </template>
-                            </UFormField>
+                                    <template #description>
+                                        <span class="text-sm text-secondary">{{ $t('components.settings.options.polygon_cache_desc') }}</span>
+                                    </template>
+                                </UFormField>
+                            </fieldset>
                             <UFormField :label="$t('components.settings.options.rth_sessions')" class="w-full">
                                 <template #description>
                                     <span class="text-sm text-secondary">{{ $t('components.settings.options.rth_sessions_desc') }}</span>
@@ -174,8 +214,8 @@
                     </div>
 
                     <!-- Section Data sync -->
-                    <div class="section-separator">
-                        <h3 class="section-subtitle-lg">{{ $t('components.settings.options.data_sync_section') }}</h3>
+                    <fieldset class="border border-default rounded-lg p-4 space-y-4">
+                        <legend class="px-2 text-sm font-semibold text-secondary">{{ $t('components.settings.options.data_sync_section') }}</legend>
                         <div class="space-y-6">
                             <UFormField :label="$t('components.settings.options.save_ui_state')" class="w-lg">
                                 <template #description>
@@ -204,11 +244,11 @@
                                 </UButton>
                             </UFormField>
                         </div>
-                    </div>
+                    </fieldset>
 
                     <!-- Section Storage -->
-                    <div class="section-separator">
-                        <h3 class="section-subtitle-lg">{{ $t('components.settings.options.storage_section') }}</h3>
+                    <fieldset class="border border-default rounded-lg p-4 space-y-4">
+                        <legend class="px-2 text-sm font-semibold text-secondary">{{ $t('components.settings.options.storage_section') }}</legend>
                         <div class="grid grid-cols-1 gap-8">
                             <UFormField name="storageUrl" :label="$t('components.settings.options.storage_url')">
                                 <UInput
@@ -221,62 +261,60 @@
                                 </template>
                             </UFormField>
                             <UFormField name="storageToken" :label="$t('components.settings.options.storage_token')" class="w-lg">
-                                <div class="flex gap-2">
-                                    <UInput
-                                        :model-value="userStore.user?.token || ''"
-                                        readonly
-                                        class="bg-gray-100 dark:bg-gray-800 flex-1"
-                                        :type="showToken ? 'text' : 'password'"
-                                    />
-                                    <UButton
-                                        color="neutral"
-                                        variant="soft"
-                                        @click="showToken = !showToken"
-                                    >
-                                        {{ showToken ? $t('components.settings.options.hide') : $t('components.settings.options.show') }}
-                                    </UButton>
-                                    <UButton
-                                        color="neutral"
-                                        variant="soft"
-                                        @click="copyToClipboard(userStore.user?.token || '')"
-                                    >
-                                        {{ $t('components.settings.options.copy') }}
-                                    </UButton>
-                                </div>
+                                <CommonCopyableInput
+                                    :model-value="userStore.user?.token || ''"
+                                    type="password"
+                                    readonly
+                                    input-class="bg-elevated"
+                                />
                                 <template #description>
                                     <span class="text-sm text-secondary">{{ $t('components.settings.options.storage_token_desc') }}</span>
                                 </template>
                             </UFormField>
                             <UFormField name="storagePassword" :label="$t('components.settings.options.storage_password')" class="w-lg">
-                                <div class="flex gap-2">
-                                    <UInput
-                                        v-model="formState.storagePassword"
-                                        class="flex-1"
-                                        :type="showPassword ? 'text' : 'password'"
-                                        placeholder="Mot de passe de chiffrement"
-                                        autocomplete="off"
-                                    />
-                                    <UButton
-                                        color="neutral"
-                                        variant="soft"
-                                        @click="showPassword = !showPassword"
-                                    >
-                                        {{ showPassword ? $t('components.settings.options.hide') : $t('components.settings.options.show') }}
-                                    </UButton>
-                                    <UButton
-                                        color="neutral"
-                                        variant="soft"
-                                        @click="copyToClipboard(formState.storagePassword)"
-                                    >
-                                        {{ $t('components.settings.options.copy') }}
-                                    </UButton>
-                                </div>
+                                <CommonCopyableInput
+                                    :model-value="formState.storagePassword"
+                                    type="password"
+                                    placeholder="Mot de passe de chiffrement"
+                                    autocomplete="off"
+                                    @update:model-value="formState.storagePassword = $event"
+                                />
                                 <template #description>
                                     <span class="text-sm text-secondary">{{ $t('components.settings.options.storage_password_desc') }}</span>
                                 </template>
                             </UFormField>
                         </div>
-                    </div>
+                    </fieldset>
+
+                    <!-- Section MCP -->
+                    <fieldset class="border border-default rounded-lg p-4 space-y-4">
+                        <legend class="px-2 text-sm font-semibold text-secondary">{{ $t('components.settings.options.mcp_section') }}</legend>
+                        <div v-if="mcpPending" class="flex items-center gap-2 text-secondary">
+                            <UIcon name="i-lucide-loader-circle" class="animate-spin" />
+                            {{ $t('common.actions.loading') }}
+                        </div>
+                        <div v-else-if="mcpError" class="text-sm text-secondary">
+                            {{ $t('components.settings.options.mcp_unavailable') }}
+                        </div>
+                        <div v-else-if="mcpInfo" class="grid grid-cols-1 gap-8">
+                            <p class="text-sm text-secondary">{{ $t('components.settings.options.mcp_desc') }}</p>
+                            <UFormField :label="$t('components.settings.options.mcp_port')" class="w-lg">
+                                <CommonCopyableInput
+                                    :model-value="mcpInfo.apiUrl"
+                                    readonly
+                                    input-class="font-mono"
+                                />
+                            </UFormField>
+                            <UFormField :label="$t('components.settings.options.mcp_token')" class="w-lg">
+                                <CommonCopyableInput
+                                    :model-value="mcpInfo.token"
+                                    type="password"
+                                    readonly
+                                    input-class="font-mono"
+                                />
+                            </UFormField>
+                        </div>
+                    </fieldset>
 
                     <!-- Section API NinjaTrader -->
                     <!-- <div class="section-separator">
@@ -310,8 +348,8 @@
                     </div> -->
 
                     <!-- Section Fuseau horaire pour l'affichage -->
-                    <div class="section-separator">
-                        <h3 class="section-subtitle-lg">{{ $t('components.settings.options.timezone_display_section') }}</h3>
+                    <fieldset class="border border-default rounded-lg p-4 space-y-4">
+                        <legend class="px-2 text-sm font-semibold text-secondary">{{ $t('components.settings.options.timezone_display_section') }}</legend>
                         <div class="flex flex-col gap-8">
                             <UFormField name="timezoneDisplay" :label="$t('components.settings.options.timezone_display_mode')" class="w-64">
                                 <USelect
@@ -358,11 +396,11 @@
                                 <p class="text-sm font-medium mt-2">{{ $t('components.settings.options.timezone_current_detected') }}: {{ detectedTimezone }}</p>
                             </div>
                         </div>
-                    </div>
+                    </fieldset>
 
                     <!-- Section Couleurs des graphiques -->
-                    <div class="section-separator">
-                        <h3 class="section-subtitle-lg">{{ $t('components.settings.options.chart_colors_section') }}</h3>
+                    <fieldset class="border border-default rounded-lg p-4 space-y-4">
+                        <legend class="px-2 text-sm font-semibold text-secondary">{{ $t('components.settings.options.chart_colors_section') }}</legend>
                         <div class="grid grid-cols-4 gap-4 max-w-[400px] mb-2">
                             <div class="text-md text-secondary text-left" :class="{ 'font-bold underline': currentTheme === 'light' }">Light</div>
                             <div class="text-md text-secondary text-left" :class="{ 'font-bold underline': currentTheme === 'light-blue' }">Light Blue</div>
@@ -428,7 +466,7 @@
                                     :label="$t('components.settings.options.color_raw_metric')"
                                     :default-colors="defaultSettings.chartColors!.timeSeriesChart.rawMetric"
                                 />
-                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                <p class="text-xs text-muted">
                                     {{ $t('components.dashboard.common.bar_color_info') }}
                                 </p>
                             </div>
@@ -471,8 +509,9 @@
                                 />
                             </div>
                         </div>
-                    </div>
+                    </fieldset>
                 </div>
+
                 <div class="flex action-buttons mt-8">
                     <UButton :label="$t('common.actions.back')" icon="i-heroicons-arrow-left" color="primary" variant="link" @click="goBack" />
                     <UButton type="button" color="neutral" @click="resetSettings">{{ $t('common.actions.reset') }}</UButton>
@@ -492,6 +531,14 @@ import { buildSettingsFormState, buildResetSettings } from '~/composables/settin
 const { success: toastSuccess } = useAppToast()
 const { updateSettings } = useAuth()
 const userStore = useUserStore()
+
+type McpInfo = {
+	apiUrl: string
+	token: string
+	instructions: string
+}
+
+const { data: mcpInfo, pending: mcpPending, error: mcpError } = await useFetch<McpInfo>('/api/mcp/info')
 const { log_error } = useLogView()
 const { t } = useI18n()
 const { goBack } = useQuickNav()
@@ -506,9 +553,7 @@ const currentTheme = computed(() => {
 })
 
 // Visibility toggles for sensitive data
-const showToken = ref(false)
-const showPassword = ref(false)
-const showPolygonKey = ref(false)
+
 const clearingCache = ref(false)
 const savingUiState = ref(false)
 const resettingUiState = ref(false)
@@ -554,16 +599,6 @@ const onClearPolygonCache = async () => {
 	}
 }
 
-// Copy to clipboard helper
-const copyToClipboard = async (text: string) => {
-  try {
-    await navigator.clipboard.writeText(text)
-    toastSuccess(t('components.settings.options.copied_title'), t('components.settings.options.copied_desc'))
-  } catch {
-    log_error('Failed to copy to clipboard')
-  }
-}
-
 const formState = ref<SettingsContentType>({
   ...defaultSettings,
   timezoneDisplay: 'CURRENT',
@@ -576,6 +611,17 @@ const timezoneDisplayOptions = computed(() => [
   { label: t('components.settings.options.timezone_mode_current'), value: 'CURRENT' },
   { label: t('components.settings.options.timezone_mode_local'), value: 'LOCAL' },
   { label: t('components.settings.options.timezone_mode_utc'), value: 'UTC' },
+])
+
+// Options pour la police de caractere
+const fontFamilyOptions = computed(() => [
+  { label: t('components.settings.options.font_system'), value: 'system' },
+  { label: 'Inter', value: 'inter' },
+  { label: 'JetBrains Mono', value: 'jetbrains' },
+  { label: 'Geist', value: 'geist' },
+  { label: 'Plus Jakarta Sans', value: 'jakarta' },
+  { label: 'Archivo', value: 'archivo' },
+  { label: 'Source Sans 3', value: 'source-sans' },
 ])
 
 // Options pour les fuseaux horaires IANA

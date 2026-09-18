@@ -2,12 +2,12 @@ import type { NoteType } from '~/schema/note'
 import { formatDateToYYYYMMDD } from '~/utils/date-utils'
 
 export const useNotesPanel = () => {
-	const { fetchNoteDates, saveNote: saveNoteToApi, updateNote, deleteNote } = useNotes()
+	const { fetchNoteDates, fetchNotesByDate, saveNote: saveNoteToApi, updateNote, deleteNote } = useNotes()
 	const { log_error } = useLogView()
 	const { success: toastSuccess } = useAppToast()
 	const { t } = useI18n()
 	const dbStateStore = useDbStateStore()
-	const { uploadContext, cleanupOrphanImages, cleanupTmpImages, finalizeImages, deleteNoteImages } = useNoteImages()
+	const { uploadContext, cleanupOrphanImages, cleanupTmpImages, finalizeImages, deleteNoteImages, uploadBlobImages } = useNoteImages()
 
 	const loading = ref(false)
 	const noteDates = ref<NoteType[]>([])
@@ -31,10 +31,27 @@ export const useNotesPanel = () => {
 	const noteSubtitle = ref('')
 	const savedSubtitle = ref('')
 
-	const isDirty = computed(() => editorContent.value.trim() !== savedContent.value.trim() || noteSubtitle.value !== savedSubtitle.value)
+	// Pendant le chargement d'une note, Milkdown normalise le markdown et émet une version
+	// potentiellement différente de celle du serveur. Ce flag désactive isDirty le temps
+	// que cette normalisation soit terminée, puis synchronise savedContent.
+	const isLoadingNote = ref(false)
+
+	// Pendant le chargement, on synchronise savedContent en continu avec editorContent
+	// pour suivre la normalisation Milkdown peu importe quand elle se produit.
+	watch(editorContent, () => {
+		if (isLoadingNote.value) {
+			savedContent.value = editorContent.value
+		}
+	})
+
+	const isDirty = computed(() => {
+		if (isLoadingNote.value) return false
+		return editorContent.value.trim() !== savedContent.value.trim() || noteSubtitle.value !== savedSubtitle.value
+	})
 	const isNewNote = computed(() => !!selectedNote.value && !selectedNote.value.id)
 	const showDirtyIndicator = computed(() => isDirty.value || isNewNote.value)
 	const selectedNoteId = computed(() => selectedNote.value?.id || null)
+	const isMcpJournalNote = (note: NoteType) => new Date(note.date).getTime() === Date.UTC(1980, 0, 1)
 
 	const noteDatesGrouped = computed(() => {
 		const grouped = new Map<string, NoteType[]>()
@@ -43,24 +60,42 @@ export const useNotesPanel = () => {
 			if (!grouped.has(dateKey)) grouped.set(dateKey, [])
 			grouped.get(dateKey)!.push(note)
 		})
-		grouped.forEach((notes) => notes.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()))
+		grouped.forEach((notes) => notes.sort((a, b) => Number(isMcpJournalNote(b)) - Number(isMcpJournalNote(a)) || new Date(b.date).getTime() - new Date(a.date).getTime()))
 		return Array.from(grouped.entries())
 			.map(([date, notes]) => ({ date, notes }))
-			.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+			.sort((a, b) => Number(b.notes.some(isMcpJournalNote)) - Number(a.notes.some(isMcpJournalNote)) || new Date(b.date).getTime() - new Date(a.date).getTime())
 	})
 
 	const setContent = async (v: string) => { editorContent.value = v }
 	const getContent = () => editorContent.value
 
-	const doSelectNote = (note: NoteType) => {
-		selectedNote.value = note
-		dbStateStore.setLastViewedNoteId(note.id ?? null)
-		const subtitle = note.metadata?.subtitle || ''
+	const doSelectNote = async (note: NoteType) => {
+		// La note IA peut être modifiée externement par le MCP entre deux sélections.
+		// On recharge sa version fraîche depuis l'API avant d'afficher pour éviter un flicker.
+		let freshNote = note
+		if (note.id && isMcpJournalNote(note)) {
+			try {
+				const notes = await fetchNotesByDate(note.date) as NoteType[]
+				freshNote = notes.find((n: NoteType) => n.id === note.id) ?? note
+			} catch {
+				// si le refresh échoue on garde la version en cache
+			}
+		}
+		isLoadingNote.value = true
+		selectedNote.value = freshNote
+		dbStateStore.setLastViewedNoteId(freshNote.id ?? null)
+		const subtitle = freshNote.metadata?.subtitle || ''
 		noteSubtitle.value = subtitle
 		savedSubtitle.value = subtitle
-		const c = note.content || ''
+		const c = freshNote.content || ''
 		savedContent.value = c
 		setContent(c)
+		// Le watch sur editorContent synchronise savedContent pendant isLoadingNote.
+		// On attend 500ms pour laisser à Milkdown le temps de normaliser, puis on
+		// désactive le flag. Le watch a déjà sync savedContent avec la version normalisée.
+		setTimeout(() => {
+			isLoadingNote.value = false
+		}, 500)
 	}
 
 	const selectNote = (note: NoteType) => {
@@ -174,33 +209,47 @@ export const useNotesPanel = () => {
 		if (!selectedNote.value) return
 		try {
 			const noteContent = getContent().trim()
-			const noteData = { date: selectedNote.value.date, content: noteContent, subtitle: noteSubtitle.value }
 			if (noteContent) {
+				const processedContent = await uploadBlobImages(noteContent)
+				const noteData = { date: selectedNote.value.date, content: processedContent, subtitle: noteSubtitle.value }
 				const savedNote = selectedNote.value.id ? await updateNote(selectedNote.value.id, noteData) : await saveNoteToApi(noteData)
 				if (savedNote) {
-					const finalContent = await finalizeImages(savedNote.id!, noteContent)
+					const finalContent = await finalizeImages(savedNote.id!, processedContent)
+
 					await cleanupOrphanImages(savedContent.value, finalContent)
+
 					if (finalContent !== noteContent) {
 						await updateNote(savedNote.id!, { content: finalContent })
 						savedNote.content = finalContent
 					}
 					selectedNote.value = savedNote
-					savedContent.value = finalContent
 					savedSubtitle.value = noteSubtitle.value
-					await setContent(finalContent)
+					// Toujours activer isLoadingNote après sauvegarde pour synchroniser
+					// savedContent avec la version normalisée de Milkdown (le watch sync en continu).
+					isLoadingNote.value = true
+					if (finalContent !== noteContent) {
+						savedContent.value = finalContent
+						await setContent(finalContent)
+					} else {
+						savedContent.value = noteContent
+					}
+					setTimeout(() => {
+						isLoadingNote.value = false
+					}, 500)
 					await loadNotes()
 					toastSuccess(t('components.notes_panel.toast.save_success_title'), t('components.notes_panel.toast.save_success_desc'))
-					emit?.('save', { date: savedNote.date, note: noteContent })
+					emit?.('save', { date: savedNote.date, note: finalContent })
 				}
 			} else if (selectedNote.value.id) {
 				await cleanupOrphanImages(savedContent.value, '')
 				const success = await deleteNote(selectedNote.value.id)
 				if (success) {
+					const noteDate = selectedNote.value.date
 					selectedNote.value = null
 					setContent('')
 					await loadNotes()
 					toastSuccess(t('components.notes_panel.toast.delete_success_title'), t('components.notes_panel.toast.delete_success_desc'))
-					emit?.('save', { date: noteData.date, note: '' })
+					emit?.('save', { date: noteDate, note: '' })
 				}
 			}
 		} catch (err) {
@@ -269,7 +318,7 @@ export const useNotesPanel = () => {
 		// computed
 		isDirty, isNewNote, showDirtyIndicator, selectedNoteId, noteDatesGrouped,
 		// methods
-		setContent, getContent,
+		setContent, getContent, isMcpJournalNote,
 		selectNote, doSelectNote,
 		openCreateModal, doOpenCreateModal,
 		openChangeDateTimeModal, confirmChangeDateTime,

@@ -46,8 +46,9 @@ export const useTooltipMetrics = (
 
 	const selectedTooltipMetrics = computed<TradeTooltipField[]>(() => {
 		const selected = config.value.tooltipMetrics ?? []
+		const validValues = new Set([...metricOptions.map(m => m.value), ...tradeTooltipOptions.map(m => m.value)])
 		const order = [...metricOptions.map(m => m.value), ...tradeTooltipOptions.map(m => m.value)]
-		return [...selected].sort((a, b) => order.indexOf(a) - order.indexOf(b))
+		return [...selected].filter(m => validValues.has(m)).sort((a, b) => order.indexOf(a) - order.indexOf(b))
 	})
 
 	const toggleTooltipMetric = (metric: TradeTooltipField) => {
@@ -74,7 +75,7 @@ export const useTooltipMetrics = (
 		const lines: string[] = []
 		for (const field of selectedTooltipMetrics.value) {
 			if (alreadyShown.has(field)) continue
-			const line = formatTradeTooltipField(tr, field)
+			const line = formatTradeTooltipField(tr, field, t)
 			if (line) lines.push(line)
 		}
 		return lines

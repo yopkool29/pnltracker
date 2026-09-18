@@ -6,6 +6,8 @@
 .nitro
 .cache
 dist
+tauri:*
+/src-tauri/runtime
 
 # Node dependencies
 node_modules
@@ -25,6 +27,7 @@ logs
 # Local env files
 .env
 .env.production
+.devin/mcp_config.local.json
 !.env.example
 !.env.production.example
 /upload
@@ -52,3 +55,10 @@ NOTE-private.md
 KNIP-report-private.md
 docs/ben*
 docs/dev/metrics
+# Tauri build artifacts
+src-tauri/target/
+src-tauri/runtime/
+src-tauri/gen/
+# Vendored binaries (PostgreSQL, etc.)
+vendor/
+docs/dev/BUILD_RELEASE.md

@@ -18,7 +18,7 @@
 		<div>
 			<label class="block text-sm font-medium mb-2">Select File</label>
 			<UIInput type="file" @change="handleFileSelect" />
-			<p v-if="selectedFile" class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+			<p v-if="selectedFile" class="mt-2 text-sm text-muted">
 				Selected: {{ selectedFile.name }} ({{ formatFileSize(selectedFile.size) }})
 			</p>
 		</div>
@@ -114,14 +114,8 @@ const convert = async () => {
 		}
 
 		const blob = await response.blob()
-		const url = window.URL.createObjectURL(blob)
-		const a = document.createElement('a')
-		a.href = url
-		a.download = `${selectedFile.value.name.replace(/\.[^/.]+$/, '')}_converted.csv`
-		document.body.appendChild(a)
-		a.click()
-		window.URL.revokeObjectURL(url)
-		document.body.removeChild(a)
+		const { downloadBlob } = useTauriDownload()
+		await downloadBlob(blob, `${selectedFile.value.name.replace(/\.[^/.]+$/, '')}_converted.csv`)
 
 		success.value = true
 		selectedFile.value = null

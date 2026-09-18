@@ -12,7 +12,7 @@ import {
 
 describe('Database Integration - Import Standard CSV', () => {
 	let testDbId: number
-	const filePath = resolve(process.cwd(), 'data/tests/mt5-standard-1214585.csv')
+	const filePath = resolve(process.cwd(), 'data/tests/mt5-standard-9988776.csv')
 
 	beforeAll(async () => {
 		const db = await acquireTestDatabase()

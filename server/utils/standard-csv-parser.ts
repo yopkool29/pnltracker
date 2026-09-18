@@ -96,10 +96,17 @@ export function parseStandardCSV(
                 ? (parseFloat(values[colIndex['exchange']]) || 0)
                 : 0
 
+            // Swap est optionnel (frais de financement overnight)
+            const swap = colIndex['swap'] !== undefined
+                ? (parseFloat(values[colIndex['swap']]) || 0)
+                : 0
+
             // Créer le trade
             const profit = parseFloat(values[colIndex['profit']]);
             const commission = parseFloat(values[colIndex['commission']]);
-            const netProfit = profit - commission;
+            // MT5 fournit le profit BRUT (avant commission et swap)
+            // Commission est négative, donc on additionne pour obtenir le NET
+            const netProfit = profit + commission + swap;
 
             const trade: TradesImport = {
                 openDate,
@@ -114,7 +121,7 @@ export function parseStandardCSV(
                 stopLoss: colIndex['stopLoss'] !== undefined ? (parseFloat(values[colIndex['stopLoss']]) || 0) : 0,
                 takeProfit: colIndex['takeProfit'] !== undefined ? (parseFloat(values[colIndex['takeProfit']]) || 0) : 0,
                 commission,
-                exchange,
+                exchange: swap, // swap stocké dans exchange (la base n'a pas de colonne swap)
                 screenshotUrl: null
             }
 

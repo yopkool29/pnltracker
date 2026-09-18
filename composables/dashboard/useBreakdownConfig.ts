@@ -81,9 +81,8 @@ export const tradeTooltipOptions: { value: TradeTooltipField; labelKey: string }
 	{ value: 'openPrice', labelKey: 'components.dashboard.breakdown.trade_property.openPrice' },
 	{ value: 'closePrice', labelKey: 'components.dashboard.breakdown.trade_property.closePrice' },
 	{ value: 'commission', labelKey: 'components.dashboard.breakdown.trade_property.commission' },
+	{ value: 'swap', labelKey: 'components.dashboard.breakdown.trade_property.swap' },
 	{ value: 'duration', labelKey: 'components.dashboard.breakdown.trade_property.duration' },
-	{ value: 'mfe', labelKey: 'components.dashboard.breakdown.trade_property.mfe' },
-	{ value: 'mae', labelKey: 'components.dashboard.breakdown.trade_property.mae' },
 ]
 
 // Types de breakdown disponibles dans le menu visibilité (avec bouton "créer")

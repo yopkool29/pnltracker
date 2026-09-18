@@ -10,6 +10,7 @@ export type DayData = {
 	count: number
 	pnl: number
 	commission?: number
+	swap?: number
 	winrate: number
 	trades: TradeExtendedType[]
 	screenshotCount: number
@@ -51,13 +52,14 @@ export const useCalendarGrid = (
 			tradesByDay[key].push(trade)
 		}
 
-		const stats: { [key: string]: { count: number; pnl: number; commission: number; trades: TradeExtendedType[] } } = {}
+		const stats: { [key: string]: { count: number; pnl: number; commission: number; swap: number; trades: TradeExtendedType[] } } = {}
 		eachDayOfInterval({ start, end }).forEach((day) => {
 			const key = formatDateToYYYYMMDD(day)
 			const tradesOfDay = tradesByDay[key] || []
 			const pnl = tradesOfDay.reduce((sum, t) => sum + (displayModeNet.value ? t.netProfit : t.profit), 0)
 			const commission = tradesOfDay.reduce((sum, t) => sum + (t.commission || 0), 0)
-			stats[key] = { count: tradesOfDay.length, pnl, commission, trades: tradesOfDay }
+			const swap = tradesOfDay.reduce((sum, t) => sum + (t.exchange || 0), 0)
+			stats[key] = { count: tradesOfDay.length, pnl, commission, swap, trades: tradesOfDay }
 		})
 		return stats
 	}
@@ -100,6 +102,7 @@ export const useCalendarGrid = (
 				count: dayData?.count || 0,
 				pnl: dayData?.pnl || 0,
 				commission: dayData?.commission || 0,
+				swap: dayData?.swap || 0,
 				winrate: dayData?.trades ? getWinrate(dayData.trades, 0) : 0,
 				trades,
 				screenshotCount,

@@ -55,12 +55,12 @@
                     </UFormField>
 
                     <!-- Selected File Info -->
-                    <div v-if="selectedFile" class="p-3 bg-gray-50 dark:bg-gray-800 rounded">
+                    <div v-if="selectedFile" class="p-3 bg-elevated rounded">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
                                 <UIcon name="i-lucide-file-text" class="text-primary" />
                                 <span class="text-sm font-medium">{{ selectedFile.name }}</span>
-                                <span class="text-xs text-gray-500">({{ formatFileSize(selectedFile.size) }})</span>
+                                <span class="text-xs text-muted">({{ formatFileSize(selectedFile.size) }})</span>
                             </div>
                             <UButton variant="ghost" color="error" icon="i-lucide-x" size="xs" @click="clearFile" />
                         </div>
@@ -248,14 +248,8 @@ const onSubmitConvert = async (event: FormSubmitEvent<typeof converterParams>) =
 
         // Download the converted file
         const blob = new Blob([response as string], { type: 'text/csv' })
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${selectedFile.value.name.replace(/\.[^/.]+$/, '')}_converted.csv`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
+        const { downloadBlob } = useTauriDownload()
+        await downloadBlob(blob, `${selectedFile.value.name.replace(/\.[^/.]+$/, '')}_converted.csv`)
 
         conversionSuccess.value = true
         selectedFile.value = null

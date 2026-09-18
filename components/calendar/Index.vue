@@ -84,7 +84,7 @@
                             <div
                                 v-for="day in weekDays"
                                 :key="day"
-                                class="text-center font-semibold text-sm p-2 bg-gray-100 dark:bg-gray-800 rounded"
+                                class="text-center font-semibold text-sm p-2 bg-elevated rounded"
                             >
                                 {{ day }}
                             </div>
@@ -99,7 +99,7 @@
                             <div
                                 v-for="(day, dayIndex) in week.days"
                                 :key="dayIndex"
-                                class="border rounded px-2 py-0 min-h-[100px] transition-all cursor-pointer hover:shadow-lg hover:scale-105"
+                                class="border rounded px-2 py-0 min-h-[100px] cursor-pointer"
                                 :class="{
                                     'calendar-day-positive': day.pnl > 0,
                                     'calendar-day-negative': day.pnl < 0,
@@ -113,7 +113,7 @@
 
                             <!-- Total de la semaine -->
                             <div
-                                class="border rounded p-2 min-h-[100px] flex flex-col items-center justify-center transition-all cursor-pointer hover:shadow-lg"
+                                class="border rounded p-2 min-h-[100px] flex flex-col items-center justify-center cursor-pointer"
                                 :class="{
                                     'calendar-day-positive': week.total > 0,
                                     'calendar-day-negative': week.total < 0,
@@ -123,6 +123,7 @@
                             >
                                 <div class="text-xs font-semibold mb-1">{{ $t('components.calendar.index.total') }}</div>
                                 <div
+                                    v-if="week.days.some((day) => day.isCurrentMonth && day.count > 0)"
                                     class="text-lg font-bold"
                                     :class="{
                                         'calendar-pnl-positive': week.total > 0,
@@ -131,6 +132,7 @@
                                 >
                                     {{ formatCurrency(week.total) }}
                                 </div>
+                                <div v-else class="text-lg font-bold text-muted">—</div>
                             </div>
                         </div>
                     </div>
@@ -149,7 +151,7 @@
                     :group-date="selectedDayDate"
                     :group-trades="selectedDay.trades"
                 />
-                <div v-else class="py-8 text-center text-gray-500 dark:text-gray-400">
+                <div v-else class="py-8 text-center text-muted">
                     <div class="text-lg mb-2">{{ $t('components.calendar.index.no_trades_for_day') }}</div>
                 </div>
             </template>
@@ -168,7 +170,7 @@
                         :group-trades="day.trades"
                     />
                 </template>
-                <div v-if="!selectedWeekDays.some((d) => d.count > 0)" class="py-8 text-center text-gray-500 dark:text-gray-400">
+                <div v-if="!selectedWeekDays.some((d) => d.count > 0)" class="py-8 text-center text-muted">
                     <div class="text-lg mb-2">{{ $t('components.calendar.index.no_trades_for_week') }}</div>
                 </div>
             </template>

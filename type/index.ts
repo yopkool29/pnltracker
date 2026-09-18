@@ -3,6 +3,9 @@
 // - TradeType -> schema/trade.ts
 // - ConfigSymbol -> schema/symbol.ts
 import { IANA_TIMEZONES, UTC_OFFSETS } from '~/utils/date-utils';
+import type { TradeFilter } from '~/schema/tradeFilter'
+
+export type { TradeFilter, TradeFilterValue } from '~/schema/tradeFilter'
 
 interface ILogView {
     onClose: () => void
@@ -24,10 +27,6 @@ export type {
     ILogView,
     ErrorMessage
 }
-
-export type TradeFilterValue = number | string | [number, number, number] | number[] | string[] | undefined
-
-export type TradeFilter = { column: string, operator: string, value: TradeFilterValue }
 
 export enum InstrumentType {
     Stock = 'stock',
@@ -116,7 +115,7 @@ export type BreakdownChartType = 'bar' | 'barVertical' | 'scatter' | 'scatter2D'
 export type TradeProperty = 'duration' | 'pnl' | 'mfe' | 'mae'
 
 // Propriétés de trade affichables dans le tooltip du scatterTrades
-export type TradeTooltipField = BreakdownMetric | 'lot' | 'openPrice' | 'closePrice' | 'commission' | 'mfe' | 'mae' | 'side' | 'duration'
+export type TradeTooltipField = BreakdownMetric | 'lot' | 'openPrice' | 'closePrice' | 'commission' | 'mfe' | 'mae' | 'side' | 'duration' | 'netProfit' | 'profit' | 'swap'
 
 // Format de l'axe Y pour les séries temporelles
 export type TimeSeriesYAxisFormat = 'currency' | 'percent' | 'number'
@@ -359,6 +358,7 @@ export interface DashBoardResult {
     maxTradeDuration: number
     expectancy: number
     totalCommission: number
+    totalSwap: number
     totalProfit: number
     winningTradesCount: number
     winningContractsCount: number
@@ -368,6 +368,7 @@ export interface DashBoardResult {
     avgWinDuration: number
     maxWinDuration: number
     winningTradesCommission: number
+    winningTradesSwap: number
     maxRunUp: number
     maxRunUpDateFrom: Date | null
     maxRunUpDateTo: Date | null
@@ -381,6 +382,7 @@ export interface DashBoardResult {
     avgLossDuration: number
     maxLossDuration: number
     losingTradesCommission: number
+    losingTradesSwap: number
     maxDrawdown: number
     maxDrawdownDateFrom: Date | null
     maxDrawdownDateTo: Date | null

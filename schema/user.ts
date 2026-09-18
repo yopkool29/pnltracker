@@ -23,6 +23,24 @@ export const SettingsSchema = z.object({
     settings: z.string(),
 })
 
+export const ChangeEmailSchema = z.object({
+    currentPassword: z.string().min(1),
+    email: z.string().email(),
+})
+
+export type ChangeEmailType = z.infer<typeof ChangeEmailSchema>
+
+export const ChangePasswordSchema = z.object({
+    currentPassword: z.string().min(1),
+    newPassword: z.string().min(5),
+    confirmPassword: z.string().min(5),
+}).refine(data => data.newPassword === data.confirmPassword, {
+    path: ['confirmPassword'],
+    params: { i18n: 'components.settings.security.password_mismatch' },
+})
+
+export type ChangePasswordType = z.infer<typeof ChangePasswordSchema>
+
 // Schéma de validation pour les paramètres
 export const SettingsContentSchema = z.object({
     deleteConfirmationTrade: z.boolean().default(true),
@@ -36,6 +54,8 @@ export const SettingsContentSchema = z.object({
     showTradeChart: z.boolean().default(true),
     showDetailedNote: z.boolean().default(true),
     polygonApiKey: z.string().default(''),
+    polygonRequestDelayMs: z.number().default(12000),
+    polygonCacheRefreshMinutes: z.number().default(1440),
     // Regular Trading Hours (RTH) per instrument type.
     // open/close are "HH:MM" in the given IANA timezone.
     // Forex and crypto trade near 24/7 so they have no RTH session.
@@ -50,6 +70,7 @@ export const SettingsContentSchema = z.object({
     timezoneDisplay: z.enum(['CURRENT', 'LOCAL', 'UTC']).default('CURRENT'),
     timezoneLocal: z.string().default('Europe/Paris'),
     timezoneUtcOffset: z.number().default(0),
+    fontFamily: z.enum(['system', 'inter', 'jetbrains', 'geist', 'jakarta', 'archivo', 'source-sans']).default('system'),
     pnlThreshold: z.number().default(0),
     defaultDatabaseId: z.number().optional().nullable(),
     storageUrl: z.string().default('https://your-ngrok-url.ngrok.io'),
