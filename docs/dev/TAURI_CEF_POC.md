@@ -119,6 +119,26 @@ data dir `~/.local/share/app.pnltracker.desktop/postgres/data` — même dir
 que la version Tauri 2, ne pas lancer les deux en même temps).
 `runtime/` (node + app syncée) recopié à côté du binaire par le prepare.
 
+Bundles générés :
+
+- `bundle/deb/PnlTracker_0.1.3_amd64.deb` (~227 MB, dépend des libs système)
+- `bundle/appimage/PnlTracker_0.1.3_amd64.AppImage` (~424 MB, `quick-sharun`
+  embarque toutes les libs → portable)
+
+Gotchas AppImage (à reporter dans le workflow CI) :
+
+- `patchelf` requis (binaire statique dans `~/.local/bin` possible)
+- `STRACE_MODE=0` **obligatoire** : sinon quick-sharun lance l'app pour
+  tracer ses `dlopen` et elle ne se termine jamais (postgres + fenêtre) →
+  hang infini du bundler
+- `ANYLINUX_LIB=0` **requis** : le `quick-sharun.sh` pin par Tauri télécharge
+  `useful-tools/lib/*.c` qui ont été déplacés upstream vers
+  `Anylinux-sharun` (404 → 5 retries → échec)
+- `xvfb-run` absent = warning inoffensif avec `STRACE_MODE=0`
+- `productName`/`identifier` identiques à la version Tauri 2 : mêmes données
+  (data dir partagé) mais impossible de lancer les deux en même temps —
+  à revoir si on publie les artifacts sur GitHub
+
 ## Limites connues
 
 - `browser_info` timeouts au premier affichage (renderer handshake flaky,
