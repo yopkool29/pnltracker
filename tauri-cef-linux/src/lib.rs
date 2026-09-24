@@ -1,0 +1,213 @@
+#[cfg(target_os = "linux")]
+mod cef_focus;
+#[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "linux"))]
+mod desktop;
+#[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "windows"))]
+mod desktop_windows;
+#[cfg(all(not(debug_assertions), feature = "desktop-production", any(target_os = "linux", target_os = "windows")))]
+mod desktop_common;
+
+// Ferme le splashscreen et montre la fenêtre principale
+// Appelée par le frontend quand le DOM est prêt
+#[tauri::command]
+fn close_splashscreen(app: tauri::AppHandle) {
+    use tauri::Manager;
+    if let Some(splash) = app.get_webview_window("splashscreen") {
+        let _ = splash.close();
+    }
+    if let Some(main) = app.get_webview_window("main") {
+        let _ = main.show();
+        let _ = main.set_focus();
+    }
+}
+
+// Arrête les services backend et ferme l'application
+// Appelée par le frontend après avoir affiché l'overlay de fermeture
+#[tauri::command]
+fn quit_app(app: tauri::AppHandle) {
+    #[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "linux"))]
+    desktop::stop(&app);
+    #[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "windows"))]
+    desktop_windows::stop(&app);
+    app.exit(0);
+}
+
+// Langue courante de l'app, mise à jour par le frontend via set_app_language
+struct AppLanguage(std::sync::Mutex<String>);
+
+// Messages de confirmation de fermeture par langue
+fn close_confirm_messages(lang: &str) -> (&'static str, &'static str) {
+    match lang {
+        "fr" => ("Voulez-vous vraiment quitter PnlTracker ?", "Confirmation"),
+        _ => ("Are you sure you want to quit PnlTracker?", "Confirmation"),
+    }
+}
+
+// Commande appelée par le frontend pour synchroniser la langue courante
+#[tauri::command]
+fn set_app_language(lang: String, state: tauri::State<AppLanguage>, app_handle: tauri::AppHandle) {
+    #[cfg(all(not(debug_assertions), feature = "desktop-production", any(target_os = "linux", target_os = "windows")))]
+    {
+        use tauri::Manager;
+        if let Some(data_dir) = app_handle.path().app_data_dir().ok() {
+            desktop_common::app_log(&data_dir, &format!("set_app_language: received lang={lang}"));
+        }
+    }
+    #[cfg(not(all(not(debug_assertions), feature = "desktop-production", any(target_os = "linux", target_os = "windows"))))]
+    {
+        let _ = app_handle;
+        println!("[set_app_language] received lang={lang}");
+    }
+    if let Ok(mut current) = state.0.lock() {
+        *current = lang;
+    }
+}
+
+pub fn run() {
+    let app = tauri::Builder::default()
+        // Sandbox désactivé pour le POC : le sandbox Chromium bloque l'accès au
+        // driver NVIDIA (dri_gbm.so -> Permission denied) et crash le GPU process.
+        // use-angle=gl-egl évite le crash GLX/EGL_CONTEXT_LOST sur NVIDIA X11.
+        .runtime(
+            tauri_runtime_cef::Cef::default()
+                .sandbox(tauri_runtime_cef::SandboxPolicy::Disabled)
+                .command_line_arg("use-gl", Some("angle".to_string()))
+                .command_line_arg("use-angle", Some("gl-egl".to_string())),
+        )
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            // Focus la fenêtre existante si on tente de relancer l'app
+            use tauri::Manager;
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
+        .manage(AppLanguage(std::sync::Mutex::new("en".to_string())))
+        .on_window_event(|window, event| {
+            // Workaround runtime CEF alpha : la vue web n'accepte le clavier que si le
+            // host CEF reçoit SetFocus — à propager à chaque prise de focus de la fenêtre.
+            if let tauri::WindowEvent::Focused(true) = event {
+                use tauri::Manager;
+                eprintln!("[cef-focus] window {} focused", window.label());
+                match window.app_handle().get_webview(window.label()) {
+                    Some(webview) => eprintln!("[cef-focus] set_focus -> {:?}", webview.set_focus()),
+                    None => eprintln!("[cef-focus] get_webview({}) returned None", window.label()),
+                }
+            }
+            // Confirmation avant fermeture de la fenêtre principale
+            if window.label() == "main" {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    use tauri::Manager;
+                    use tauri_plugin_dialog::DialogExt;
+                    let lang = window
+                        .app_handle()
+                        .try_state::<AppLanguage>()
+                        .and_then(|state| state.0.lock().ok().map(|l| l.clone()))
+                        .unwrap_or_else(|| "en".to_string());
+                    #[cfg(all(not(debug_assertions), feature = "desktop-production", any(target_os = "linux", target_os = "windows")))]
+                    {
+                        if let Some(data_dir) = window.app_handle().path().app_data_dir().ok() {
+                            desktop_common::app_log(&data_dir, &format!("close_dialog: current lang={lang}"));
+                        }
+                    }
+                    #[cfg(not(all(not(debug_assertions), feature = "desktop-production", any(target_os = "linux", target_os = "windows"))))]
+                    {
+                        println!("[close_dialog] current lang={lang}");
+                    }
+                    let (message, title) = close_confirm_messages(&lang);
+                    // Empêcher la fermeture par défaut
+                    api.prevent_close();
+                    let app_handle = window.app_handle().clone();
+                    window
+                        .dialog()
+                        .message(message)
+                        .title(title)
+                        .kind(tauri_plugin_dialog::MessageDialogKind::Warning)
+                        .buttons(tauri_plugin_dialog::MessageDialogButtons::YesNo)
+                        .show(move |confirmed| {
+                            if confirmed {
+                                // Émettre un événement pour que le frontend affiche un overlay
+                                // de fermeture avant d'arrêter les services.
+                                use tauri::Emitter;
+                                let _ = app_handle.emit("app:shutdown", ());
+                                // Arrêter les services dans un thread séparé pour ne pas
+                                // bloquer le main thread et laisser l'overlay s'afficher.
+                                let handle = app_handle.clone();
+                                std::thread::spawn(move || {
+                                    // Laisser le temps à l'overlay de s'afficher
+                                    std::thread::sleep(std::time::Duration::from_millis(600));
+                                    #[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "linux"))]
+                                    desktop::stop(&handle);
+                                    #[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "windows"))]
+                                    desktop_windows::stop(&handle);
+                                    handle.exit(0);
+                                });
+                            }
+                        });
+                }
+            }
+        })
+        .invoke_handler(tauri::generate_handler![close_splashscreen, set_app_language, quit_app])
+        .setup(|app| {
+            #[cfg(target_os = "linux")]
+            cef_focus::start_watchdog();
+            if cfg!(debug_assertions) {
+                app.handle().plugin(
+                    tauri_plugin_log::Builder::default()
+                        .level(log::LevelFilter::Info)
+                        .build(),
+                )?;
+            }
+            #[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "linux"))]
+            desktop::start(app)?;
+            #[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "windows"))]
+            desktop_windows::start(app)?;
+            // En dev, Tauri attend que devUrl soit disponible avant de créer les fenêtres.
+            // Nitro est donc déjà démarré : naviguer main vers l'app, la montrer et fermer le splashscreen.
+            #[cfg(debug_assertions)]
+            {
+                use tauri::Manager;
+                let handle = app.handle().clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    if let Some(main) = handle.get_webview_window("main") {
+                        let dev_url = handle
+                            .config()
+                            .build
+                            .dev_url
+                            .clone()
+                            .unwrap_or_else(|| "http://localhost:3003".parse().expect("invalid dev url"));
+                        let _ = main.navigate(dev_url);
+                        let _ = main.show();
+                        let _ = main.set_focus();
+                        std::thread::sleep(std::time::Duration::from_millis(1500));
+                        if let Some(webview) = handle.get_webview("main") {
+                            let _ = webview.set_focus();
+                        }
+                    }
+                    if let Some(splash) = handle.get_webview_window("splashscreen") {
+                        let _ = splash.close();
+                    }
+                });
+            }
+            Ok(())
+        })
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+    app.run(|app, event| {
+        #[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "linux"))]
+        if matches!(event, tauri::RunEvent::ExitRequested { .. }) {
+            desktop::stop(app);
+        }
+        #[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "windows"))]
+        if matches!(event, tauri::RunEvent::ExitRequested { .. }) {
+            desktop_windows::stop(app);
+        }
+        #[cfg(not(all(not(debug_assertions), feature = "desktop-production")))]
+        let _ = (app, event);
+    });
+}

@@ -1,0 +1,54 @@
+[package]
+name = "pnltracker-desktop-cef"
+version = "0.1.3"
+description = "PnlTracker desktop application (CEF runtime)"
+authors = ["PnlTracker"]
+license = ""
+repository = ""
+edition = "2021"
+rust-version = "1.94.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "pnltracker_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "3.0.0-alpha.1", features = [] }
+
+[features]
+desktop-production = ["dep:getrandom"]
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "3.0.0-alpha.2", features = ["devtools", "unstable"] }
+tauri-runtime-cef = "3.0.0-alpha.2"
+tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v3" }
+getrandom = { version = "0.3.4", optional = true }
+tauri-plugin-shell = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v3" }
+tauri-plugin-single-instance = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v3" }
+# xdg-portal : évite le backend rfd/gtk3 qui charge libgtk-3 en conflit avec GTK4
+tauri-plugin-dialog = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v3", default-features = false, features = ["xdg-portal"] }
+tauri-plugin-fs = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v3" }
+tauri-plugin-opener = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v3" }
+x11-dl = "2.21.0"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+postgresql_embedded = { version = "0.21.0", features = ["blocking", "bundled"] }
+libc = "0.2.189"
+
+# Désactiver les symboles de debug (.pdb) en release pour réduire la taille
+[profile.release]
+debug = false
+
+# Suivi de la branche v3 (dev actif CEF) : les releases crates.io partent de cette
+# branche, le patch redirige aussi les deps transitives (plugins) vers le même source.
+# Rev épinglé à 72025a3a7 : le commit suivant (20b45cc2c) déplace run_on_main_thread
+# vers le trait Manager et casse tauri-plugin-dialog — upstream pas encore resynchronisé.
+[patch.crates-io]
+tauri = { git = "https://github.com/tauri-apps/tauri", rev = "72025a3a7" }
+tauri-build = { git = "https://github.com/tauri-apps/tauri", rev = "72025a3a7" }
+tauri-runtime-cef = { git = "https://github.com/tauri-apps/tauri", rev = "72025a3a7" }

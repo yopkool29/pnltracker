@@ -1,7 +1,7 @@
 <template>
 	<!-- Custom titlebar pour Tauri desktop (Linux) -->
 	<!-- Remplace la barre native XFWM4 pour permettre le snap gauche/droite -->
-	<div v-if="isTauri" class="desktop-titlebar" data-tauri-drag-region>
+	<div v-if="isTauri && !hasNativeDecorations" class="desktop-titlebar" data-tauri-drag-region>
 		<div class="flex items-center gap-2 px-3 h-full" data-tauri-drag-region>
 			<span class="text-sm font-medium text-muted select-none" data-tauri-drag-region>
 				PnlTracker <span class="text-xs opacity-50">v0.1.0</span>
@@ -51,6 +51,7 @@
 const { isTauri, snapLeft, snapRight, toggleMaximize, minimize, close } = useWindowSnap()
 
 const isMaximized = ref(false)
+const hasNativeDecorations = ref(false)
 
 // Synchroniser l'état maximisé
 let unlisten: (() => void) | null = null
@@ -59,6 +60,13 @@ onMounted(async () => {
 	if (!isTauri.value) return
 	const { getCurrentWindow } = await import('@tauri-apps/api/window')
 	const win = getCurrentWindow()
+	// Masquer la titlebar custom quand la fenêtre a des decorations natives (ex: runtime CEF)
+	try {
+		hasNativeDecorations.value = await win.isDecorated()
+	} catch {
+		hasNativeDecorations.value = false
+	}
+	if (hasNativeDecorations.value) return
 	isMaximized.value = await win.isMaximized()
 	unlisten = await win.onResized(() => {
 		win.isMaximized().then(v => isMaximized.value = v)
