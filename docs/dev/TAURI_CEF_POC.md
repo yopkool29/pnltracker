@@ -29,9 +29,26 @@ Pourquoi le pin : le HEAD de `v3` casse `tauri-plugin-dialog` (le commit
 plugin n'est resynchronisé). `72025a3a7` = alpha.2 + tests e2e + clippy,
 dernier commit compatible.
 
-**Mise à jour** : bumper le `rev` dans `Cargo.toml` → `cargo update -p tauri`.
-Nos workarounds sont dans notre crate, pas dans le runtime — rien à porter.
-Vérifier avant que les plugins compilent contre le nouveau rev.
+État au moment du POC :
+
+```
+9d00f5916  ← HEAD v3 tauri
+20b45cc2c  feat(core): Manager::run_on_main_thread — BREAKING
+72025a3a7  ← notre pin (dernier compatible)
+f2c77194d  ← HEAD v3 plugins-workspace (merge v2→v3, opener renommé)
+```
+
+Le fix attendu côté plugins : `plugins/dialog/src/desktop.rs` appelle
+`handle.run_on_main_thread()` (6 call sites) sans importer `Manager` —
+doit ajouter `use tauri::Manager` pour compiler contre HEAD. Vérifier ce
+fichier sur la branche `v3` avant chaque bump.
+
+**Mise à jour** : bumper les `rev` (tauri + plugins-workspace) dans
+`Cargo.toml` → `cargo update -p tauri` → rebuild. Nos workarounds sont
+dans notre crate, pas dans le runtime — rien à porter, le seul risque est
+qu'une update casse `cef_focus.rs` (changement de hiérarchie de fenêtres)
+ou le rende obsolète (fix focus/scroll intégré upstream → on le supprime,
+bonne nouvelle).
 
 ## Bugs du runtime alpha contournés
 
