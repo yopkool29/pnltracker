@@ -156,6 +156,15 @@ Gotchas AppImage (à reporter dans le workflow CI) :
   (data dir partagé) mais impossible de lancer les deux en même temps —
   à revoir si on publie les artifacts sur GitHub
 
+## Release GitHub
+
+`scripts/release-cef.sh <tag>` : build complet (`pnpm tauri-cef:build`, env
+vars AppImage incluses), copie les bundles dans `release-cef/` renommés
+`PnlTracker-CEF_<version>_amd64.{deb,AppImage}` (évite le conflit de noms
+avec les artifacts WebKitGTK), crée la release si absente puis upload via
+`gh --clobber`. `--no-upload` pour ne faire que le build + renommage.
+Prérequis : `gh` authentifié, `patchelf` dans le PATH.
+
 ## Limites connues
 
 - `browser_info` timeouts au premier affichage (renderer handshake flaky,

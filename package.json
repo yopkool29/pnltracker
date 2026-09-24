@@ -45,7 +45,7 @@
     "tauri-cef": "cd tauri-cef-linux && PKG_CONFIG_PATH=/home/patrice/gtk4-dev-local/root/usr/lib/x86_64-linux-gnu/pkgconfig node ../node_modules/@tauri-apps/cli-cef/tauri.js",
     "tauri-cef:dev": "cd tauri-cef-linux && PKG_CONFIG_PATH=/home/patrice/gtk4-dev-local/root/usr/lib/x86_64-linux-gnu/pkgconfig node ../node_modules/@tauri-apps/cli-cef/tauri.js dev",
     "tauri-cef:prepare": "tsx scripts/clean-build-dirs.ts && pnpm build && TAURI_DIR=tauri-cef-linux tsx scripts/prepare-tauri-runtime.ts",
-    "tauri-cef:build": "pnpm tauri-cef:prepare && cd tauri-cef-linux && PKG_CONFIG_PATH=/home/patrice/gtk4-dev-local/root/usr/lib/x86_64-linux-gnu/pkgconfig node ../node_modules/@tauri-apps/cli-cef/tauri.js build --features desktop-production --config tauri.prod.conf.json --ignore-version-mismatches",
+    "tauri-cef:build": "pnpm tauri-cef:prepare && cd tauri-cef-linux && STRACE_MODE=0 ANYLINUX_LIB=0 PKG_CONFIG_PATH=/home/patrice/gtk4-dev-local/root/usr/lib/x86_64-linux-gnu/pkgconfig node ../node_modules/@tauri-apps/cli-cef/tauri.js build --features desktop-production --config tauri.prod.conf.json --ignore-version-mismatches",
     "tauri-cef:build:exe": "pnpm tauri-cef:prepare && cd tauri-cef-linux && PKG_CONFIG_PATH=/home/patrice/gtk4-dev-local/root/usr/lib/x86_64-linux-gnu/pkgconfig node ../node_modules/@tauri-apps/cli-cef/tauri.js build --features desktop-production --config tauri.prod.conf.json --no-bundle --ignore-version-mismatches",
     "postinstall": "nuxt prepare && tsx scripts/patch-nitro-windows.ts",
     "test": "vitest",

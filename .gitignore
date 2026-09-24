@@ -47,6 +47,9 @@ website/
 # plugins
 plugins-dev/_release/
 
+# CEF release artifacts
+release-cef/
+
 # Old/deprecated components
 old/
 components/dashboard/charts/old/
