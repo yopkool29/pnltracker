@@ -1,12 +1,21 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import { fileURLToPath } from 'node:url'
-
-// Résout un package en chemin absolu (vite alias exige un path absolu
-// sinon il duplique les modules résolus)
-const pkgPath = (name: string) => fileURLToPath(new URL(`./node_modules/${name}`, import.meta.url))
-
 export default defineNuxtConfig({
     compatibilityDate: '2024-11-01',
+    // Dossiers non-source exclus du watcher vite/nuxt (chokidar) :
+    // - tauri-cef-linux : symlinks auto-référents quick-sharun (ELOOP)
+    //   + target/ ~20 GB d'artifacts rust
+    // - src-tauri/target : ~17 GB d'artifacts rust (42k fichiers watchés)
+    // - pnltracker-tools/-private : scripts invoqués à l'exécution
+    //   (spawn subprocess, pas des imports)
+    // - .cache / temp : caches et exports runtime
+    ignore: [
+        'tauri-cef-linux/**',
+        'src-tauri/target/**',
+        'pnltracker-tools/**',
+        'pnltracker-private-tools/**',
+        '.cache/**',
+        'temp/**',
+    ],
     devServer: {
         port: 3001,
     },
@@ -84,14 +93,21 @@ export default defineNuxtConfig({
             ]
         },
         resolve: {
-            alias: {
-                'element-resize-detector': '~/shims/element-resize-detector.js',
-                '@milkdown/kit/utils': pkgPath('@milkdown/utils'),
-                '@milkdown/kit/ctx': pkgPath('@milkdown/ctx'),
-                '@milkdown/kit/transformer': pkgPath('@milkdown/transformer'),
-                '@milkdown/kit/core': pkgPath('@milkdown/core'),
-                '@milkdown/kit/prose': pkgPath('@milkdown/prose'),
-            },
+            alias: [
+                { find: 'element-resize-detector', replacement: '~/shims/element-resize-detector.js' },
+                // Redirige les imports @milkdown/kit/* vers les vrais packages.
+                // customResolver repasse par la résolution normale vite (exports
+                // map des packages) — nécessaire pour les sous-chemins CSS
+                // (kit/prose/view/style/x.css → prose/lib/style/x.css) et évite
+                // le warning "not an absolute path" / modules dupliqués.
+                {
+                    find: /^@milkdown\/kit\/(utils|ctx|transformer|core|prose)(.*)/,
+                    replacement: '@milkdown/$1$2',
+                    customResolver(id: string, importer: string | undefined) {
+                        return this.resolve(id, importer, { skipSelf: true })
+                    },
+                },
+            ],
             dedupe: [
                 '@milkdown/core',
                 '@milkdown/ctx',
