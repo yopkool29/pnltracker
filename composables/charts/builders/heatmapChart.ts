@@ -30,9 +30,12 @@ export const buildHeatmapChartOption = (
 	const xLabelMap = new Map<string, number>(xKeys.map((k, i) => [k, i]))
 	const yLabelMap = new Map<string, number>(yKeys.map((k, i) => [k, i]))
 
+	// Lookup O(1) pour le tooltip : cellule par index xi|yi (premier match, comme find)
+	const cellByIndex = new Map<string, HeatmapCell2D>()
 	const data = cells.map(c => {
 		const xi = xLabelMap.get(c.keyX) ?? 0
 		const yi = yLabelMap.get(c.keyY) ?? 0
+		if (!cellByIndex.has(`${xi}|${yi}`)) cellByIndex.set(`${xi}|${yi}`, c)
 		const val = getMetricValueForMetric(c.metrics, metric)
 		return [xi, yi, val] as [number, number, number]
 	})
@@ -49,7 +52,7 @@ export const buildHeatmapChartOption = (
 			const [xi, yi, val] = p.value as unknown as [number, number, number]
 			const xLabel = xLabels[xi] ?? ''
 			const yLabel = yLabels[yi] ?? ''
-			const cell = cells.find(c => xLabelMap.get(c.keyX) === xi && yLabelMap.get(c.keyY) === yi)
+			const cell = cellByIndex.get(`${xi}|${yi}`)
 			const primaryLines = [`${t(`components.dashboard.breakdown.metrics.${metric}`)}: ${formatMetricValueForMetric(val, metric)}`]
 			return buildTooltipLines(`${yLabel} × ${xLabel}`, primaryLines, cell?.metrics, new Set([metric]), selectedTooltipMetrics, t)
 		}),

@@ -71,6 +71,12 @@ export const buildScatter2DChartOption = (
 	const xInterval = splitInterval(xAxisConfig.min, xAxisConfig.max)
 	const yInterval = splitInterval(yAxisConfig.min, yAxisConfig.max)
 
+	// Lookup O(1) pour le tooltip : métrique par key (premier match, comme find)
+	const metricByKey = new Map<string, (typeof metrics)[number]>()
+	for (const m of metrics) {
+		if (!metricByKey.has(m.key)) metricByKey.set(m.key, m)
+	}
+
 	return {
 		...base,
 		tooltip: buildTooltipBlock((params: EChartsFormatterParams<number | number[]> | EChartsFormatterParams<number | number[]>[]) => {
@@ -79,7 +85,7 @@ export const buildScatter2DChartOption = (
 			const realVx = v[4] as number
 			const realVy = v[5] as number
 			const key = String(v[2])
-			const fullMetric = metrics.find(m => m.key === key)
+			const fullMetric = metricByKey.get(key)
 			return formatScatter2DTooltip(
 				formatDimensionLabel(dimension, key),
 				metricX,

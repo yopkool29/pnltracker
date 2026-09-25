@@ -84,12 +84,19 @@ export const buildScatterTradesChartOption = (
 
 	const dataZoom = buildScatter2DDataZoom(showScrollX, showScrollY)
 
+	// Lookup O(1) pour le tooltip : clé symbol|vx|vy (premier match, comme find)
+	const pointByKey = new Map<string, (typeof rawPoints)[number]>()
+	for (const rp of rawPoints) {
+		const k = `${rp.tr.symbol}|${rp.vx}|${rp.vy}`
+		if (!pointByKey.has(k)) pointByKey.set(k, rp)
+	}
+
 	return {
 		...base,
 		tooltip: buildTooltipBlock((params: EChartsFormatterParams | EChartsFormatterParams[]) => {
 			const p = Array.isArray(params) ? params[0] : params
 			const d = p.data as { value: number[] }
-			const rp = rawPoints.find(rp => rp.tr.symbol === d.value[2] && rp.vx === d.value[4] && rp.vy === d.value[5])
+			const rp = pointByKey.get(`${d.value[2]}|${d.value[4]}|${d.value[5]}`)
 			const tr = rp?.tr
 			if (!tr) return ''
 			const dateStr = tr.openDate.toLocaleDateString()
