@@ -1,5 +1,16 @@
 import type { ChartKey, DashBoardFilters, SectionKey, WorkspaceConfig, WorkspaceId } from '~/type'
 
+// Pile undo partagée par tous les call sites du composable — chaque entrée
+// snapshot les valeurs précédentes des seules clés patchées
+type UndoEntry = {
+	workspaceId: WorkspaceId
+	dbName: string
+	prev: Partial<WorkspaceConfig>
+}
+const undoStack: UndoEntry[] = []
+const maxUndoEntries = 50
+let isUndoing = false
+
 export const useDashboardWorkspace = () => {
 	const dbStateStore = useDbStateStore()
 	const { currentDatabase, databases, fetchDatabases } = useDatabase()
@@ -17,11 +28,41 @@ export const useDashboardWorkspace = () => {
 	const activeWorkspace = computed<WorkspaceConfig | undefined>(() =>
 		workspaces.value.find(workspace => workspace.id === activeWorkspaceId.value) || workspaces.value[0],
 	)
-	const updateActiveWorkspace = (patch: Partial<WorkspaceConfig>) => {
+	const writeActiveWorkspace = (patch: Partial<WorkspaceConfig>) => {
 		const updated = workspaces.value.map(workspace =>
 			workspace.id === activeWorkspaceId.value ? { ...workspace, ...patch } : workspace,
 		)
 		dbStateStore.dashBoardFilters = { ...dbStateStore.dashBoardFilters, workspaces: updated }
+	}
+	const updateActiveWorkspace = (patch: Partial<WorkspaceConfig>) => {
+		if (!isUndoing && activeWorkspace.value) {
+			const prev: Partial<WorkspaceConfig> = {}
+			for (const key of Object.keys(patch) as (keyof WorkspaceConfig)[]) {
+				const previous = activeWorkspace.value[key]
+				// JSON clone — structuredClone lève DataCloneError sur les proxies réactifs
+				;(prev as Record<string, unknown>)[key] = previous === undefined ? undefined : JSON.parse(JSON.stringify(previous))
+			}
+			undoStack.push({
+				workspaceId: activeWorkspaceId.value,
+				dbName: currentDatabase.value?.name || 'default',
+				prev,
+			})
+			if (undoStack.length > maxUndoEntries) undoStack.shift()
+		}
+		writeActiveWorkspace(patch)
+	}
+	// Restaure la dernière modification du workspace actif (et de la base active)
+	const undoWorkspaceChange = () => {
+		const index = undoStack.findLastIndex(entry =>
+			entry.workspaceId === activeWorkspaceId.value
+			&& entry.dbName === (currentDatabase.value?.name || 'default'),
+		)
+		if (index < 0) return false
+		const [entry] = undoStack.splice(index, 1)
+		isUndoing = true
+		writeActiveWorkspace(entry.prev)
+		isUndoing = false
+		return true
 	}
 	const emptyChartVisibility = Object.fromEntries(
 		Object.keys(getDefaultChartVisibility()).map(key => [key, false]),
@@ -139,6 +180,7 @@ export const useDashboardWorkspace = () => {
 		activeWorkspaceId,
 		activeWorkspace,
 		updateActiveWorkspace,
+		undoWorkspaceChange,
 		workspaceRenameValue,
 		addWorkspace,
 		removeWorkspace,

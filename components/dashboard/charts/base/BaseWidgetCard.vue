@@ -1,5 +1,5 @@
 <template>
-	<div class="relative group">
+	<div class="relative group" @mouseenter="onCardMouseEnter" @mouseleave="onCardMouseLeave">
 		<UCard class="h-full flex flex-col" :class="{ 'bg-transparent border-0 shadow-none': transparent }" :ui="{ header: 'p-0 flex-shrink-0', body: 'flex-1 flex flex-col min-h-0 p-2' }">
 			<template #header>
 				<div class="flex items-center gap-2 w-full px-2 py-1">
@@ -11,12 +11,12 @@
 						<UPopover v-if="$slots.settings" v-model:open="isSettingsOpen">
 							<button
 								class="px-2 py-1 rounded cursor-pointer hover:bg-accented focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity"
-								:title="'Settings'"
+								:title="'Settings [S]'"
 							>
 								<UIcon name="i-heroicons-cog-6-tooth" class="w-4 h-4" />
 							</button>
 							<template #content>
-								<div class="p-3 min-w-[180px]">
+								<div class="p-3 min-w-[180px]" data-chart-settings-popover>
 									<slot name="settings" />
 									<div class="flex justify-end gap-2 mt-3 pt-3 border-t border-default">
 										<UButton size="xs" color="primary" @click="onSettingsApply">
@@ -82,7 +82,7 @@
 
 <script setup lang="ts">
 import type { EChartsOption } from 'echarts'
-import { onMounted, onActivated, onDeactivated, watch } from 'vue'
+import { onMounted, onActivated, onDeactivated, watch, useSlots } from 'vue'
 
 const props = defineProps<{
 	title: string
@@ -120,11 +120,6 @@ const notMerge = computed(() => props.notMerge ?? true)
 const isModalOpen = ref(false)
 const isSettingsOpen = ref(false)
 
-// Settings popover : émet un event à l'ouverture pour que le parent snapshot sa config
-watch(isSettingsOpen, (open) => {
-	if (open) emit('settings-open')
-})
-
 const onSettingsCancel = () => {
 	emit('settings-cancel')
 	isSettingsOpen.value = false
@@ -134,6 +129,28 @@ const onSettingsApply = () => {
 	emit('settings-apply')
 	isSettingsOpen.value = false
 }
+
+// Raccourci S : la carte s'enregistre comme cible quand le curseur la survole
+// (seulement si le slot settings existe — sinon le raccourci est sans effet).
+// Fermer passe par le cancel pour restaurer le snapshot de config.
+const slots = useSlots()
+const { registerHoveredSettingsHandle, unregisterHoveredSettingsHandle, notifySettingsState } = useChartSettingsShortcut()
+const settingsHandle = {
+	isOpen: () => isSettingsOpen.value,
+	close: onSettingsCancel,
+	toggle: () => {
+		if (isSettingsOpen.value) onSettingsCancel()
+		else isSettingsOpen.value = true
+	},
+}
+const onCardMouseEnter = () => { if (slots.settings) registerHoveredSettingsHandle(settingsHandle) }
+const onCardMouseLeave = () => { unregisterHoveredSettingsHandle(settingsHandle) }
+
+// Settings popover : émet un event à l'ouverture pour que le parent snapshot sa config
+watch(isSettingsOpen, (open) => {
+	if (open) emit('settings-open')
+	notifySettingsState(settingsHandle, open)
+})
 
 // Track mousedown position to distinguish click from drag (dataZoom scroll)
 let mouseDownPos: { x: number, y: number } | null = null

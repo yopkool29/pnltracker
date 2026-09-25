@@ -9,7 +9,7 @@
             variant="solid"
             class="fixed left-4 top-1/2 -translate-y-1/2 z-50 shadow-lg"
             :title="$t('components.dashboard.index.lock_layout')"
-            @click="() => { saveGridLayout(); isGridDraggable = false }"
+            @click="toggleGridDraggable"
         />
         <UCard class="card-container-xl">
             <template #default>
@@ -159,7 +159,7 @@
                         variant="ghost"
                         :color="isGridDraggable ? 'primary' : 'neutral'"
                         :title="isGridDraggable ? $t('components.dashboard.index.lock_layout') : $t('components.dashboard.index.unlock_layout')"
-                        @click="() => { if (isGridDraggable) saveGridLayout(); isGridDraggable = !isGridDraggable }"
+                        @click="toggleGridDraggable"
                     />
                     <!-- Renommer le workspace (sauf summary) -->
                     <div v-if="activeWorkspace?.id !== 'summary'" class="flex items-center gap-1 ml-4">
@@ -274,6 +274,7 @@ const {
     activeWorkspaceId,
     activeWorkspace,
     updateActiveWorkspace,
+    undoWorkspaceChange,
     workspaceRenameValue,
     addWorkspace,
     removeWorkspace,
@@ -354,6 +355,35 @@ const { gridLayoutRef, saveGridLayout } = useDashboardLayoutPersistence(
 
 const isGridDraggable = ref(false)
 
+const toggleGridDraggable = () => {
+    if (isGridDraggable.value) saveGridLayout()
+    isGridDraggable.value = !isGridDraggable.value
+}
+
+const isEditableTarget = (target: EventTarget | null) => {
+    const el = target as HTMLElement
+    return el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)
+}
+
+// Le popover settings a aussi role="dialog" (reka) — il ne doit pas bloquer les raccourcis
+const hasBlockingDialog = () => Array.from(document.querySelectorAll('[role="dialog"]'))
+    .some(dialog => !dialog.querySelector('[data-chart-settings-popover]'))
+
+const { toggleHoveredSettings } = useChartSettingsShortcut()
+
+const onGridLockKeydown = (e: KeyboardEvent) => {
+    if (isEditableTarget(e.target)) return
+    const key = e.key.toLowerCase()
+    if ((e.ctrlKey || e.metaKey) && key === 'z') {
+        e.preventDefault()
+        undoWorkspaceChange()
+        return
+    }
+    if (e.ctrlKey || e.metaKey || e.altKey || hasBlockingDialog()) return
+    if (key === 'd') toggleGridDraggable()
+    else if (key === 's') toggleHoveredSettings()
+}
+
 const {
     switchingToWorkspaceId,
     showUnsavedChangesModal,
@@ -405,6 +435,8 @@ const { startDateStr, endDateStr, fetchingDateRange, setHistoryDateRange } = use
 })
 
 onMounted(() => {
+    document.addEventListener('keydown', onGridLockKeydown)
+
     // Clear data if autoDataSync is enabled
     const settings = userStore.user?.settings_object as SettingsContentType
     if (settings?.autoDataSync) {
@@ -431,6 +463,10 @@ onMounted(() => {
             chartsReady.value = true
         }, 0)
     })
+})
+
+onUnmounted(() => {
+    document.removeEventListener('keydown', onGridLockKeydown)
 })
 
 </script>
