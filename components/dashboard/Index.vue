@@ -299,7 +299,6 @@ const {
 	sectionVisibilitySm,
 	activeChartVisibility,
 	activeSectionVisibility,
-	isItemVisible: _isItemVisible,
 	syncVisibilityToAllBreakpoints,
 } = useGridVisibility(activeWorkspace, updateActiveWorkspace, currentBreakpoint)
 

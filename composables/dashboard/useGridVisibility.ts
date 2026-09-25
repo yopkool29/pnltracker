@@ -66,16 +66,6 @@ export const useGridVisibility = (
 		}
 	})
 
-	const isItemVisible = (itemId: string): boolean => {
-		if (itemId in activeChartVisibility.value) {
-			return activeChartVisibility.value[itemId as ChartKey]
-		}
-		if (itemId in activeSectionVisibility.value) {
-			return activeSectionVisibility.value[itemId as SectionKey]
-		}
-		return false
-	}
-
 	const syncVisibilityToAllBreakpoints = (
 		chartVisibility: Record<ChartKey, boolean>,
 		sectionVisibility: Record<SectionKey, boolean>
@@ -99,7 +89,6 @@ export const useGridVisibility = (
 		sectionVisibilitySm,
 		activeChartVisibility,
 		activeSectionVisibility,
-		isItemVisible,
 		syncVisibilityToAllBreakpoints,
 	}
 }

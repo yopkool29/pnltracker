@@ -2,8 +2,6 @@ import type {
     EChartsOption,
     LineSeriesOption,
     ScatterSeriesOption,
-    HeatmapSeriesOption,
-    VisualMapComponentOption,
 } from 'echarts'
 import {
     startOfWeek,
@@ -27,13 +25,6 @@ import {
     formatDateKeyForGrouping,
 } from '~/utils/date-utils'
 import { formatDurationMinutes } from '~/utils/dates/duration'
-import {
-    getPNL,
-    getAPPT,
-    getWinrate,
-    movingAverage,
-    getPLRatio as calculatePLRatio,
-} from './tradeStats'
 import { round as _round } from './index'
 import { formatCurrency } from '~/utils'
 
@@ -93,7 +84,6 @@ export const defaultGridItemsSm: GridTemplateItem[] = [
     { w: 3, h: 8, i: 'winLossComparison' },
     { w: 3, h: 10, i: 'riskRatios' },
     { w: 6, h: 8, i: 'dayStatistics' },
-    { w: 3, h: 6, i: 'hourlyHeatmap' },
     { w: 3, h: 6, i: 'breakdownBarVertical_defaultWinrateByHour' },
     { w: 3, h: 6, i: 'breakdownBarVertical_defaultPnlByDayOfWeek' },
 ]
@@ -495,303 +485,6 @@ export const generateIntradayPnlChartData = (
     return dataPoints
 }
 
-// Génère les données pour le graphique de PnL cumulé
-export const generateCumulatedPnlChartData = (
-    trades: TradeType[],
-    mode: 'day' | 'week' | 'month' | 'year',
-    useNet: boolean,
-    settings: Partial<SettingsContentType> | null,
-    preGroupedTrades?: Record<string, TradeType[]>
-) => {
-    if (!trades || trades.length === 0) {
-        return {
-            labels: [],
-            datasets: [
-                {
-                    type: 'line' as const,
-                    label: 'Cumulé',
-                    data: [],
-                    borderColor: '',
-                    backgroundColor: '',
-                    fill: false,
-                    tension: 0.2,
-                    pointRadius: 4,
-                    pointBackgroundColor: [],
-                    pointBorderColor: [],
-                    pointBorderWidth: 2,
-                    yAxisID: 'y',
-                },
-                {
-                    type: 'bar' as const,
-                    label: 'PnL',
-                    data: [],
-                    backgroundColor: '',
-                    borderRadius: 4,
-                    barPercentage: 0.6,
-                },
-            ],
-        }
-    }
-
-    const groupedTrades =
-        preGroupedTrades ?? groupTradesByPeriod(trades, mode, settings)
-    const periods = Object.keys(groupedTrades).sort()
-
-    const periodPnl = periods.map((period) =>
-        getPNL(groupedTrades[period], 2, useNet)
-    )
-
-    const cumulatedPnl: number[] = []
-    let cumulated = 0
-    periodPnl.forEach((pnl) => {
-        cumulated += pnl
-        cumulatedPnl.push(cumulated)
-    })
-
-    const formattedLabels = periods.map((period) =>
-        formatDateByMode(period, mode, false)
-    )
-
-    return {
-        labels: formattedLabels,
-        datasets: [
-            {
-                type: 'line' as const,
-                label: 'Cumulé',
-                data: cumulatedPnl,
-                borderColor: '#facc15',
-                backgroundColor: '#facc15',
-                fill: false,
-                tension: 0.2,
-                pointRadius: 4,
-                pointBackgroundColor: '#facc15',
-                yAxisID: 'y',
-            },
-            {
-                type: 'bar' as const,
-                label: 'PnL',
-                data: periodPnl,
-                backgroundColor: '#38bdf8',
-                borderRadius: 4,
-                barPercentage: 0.6,
-            },
-        ],
-    }
-}
-
-// Génère les données pour le graphique APPT
-export const generateApptChartData = (
-    trades: TradeType[],
-    mode: 'day' | 'week' | 'month' | 'year',
-    movingAvgWindow: number,
-    useNet: boolean,
-    settings: Partial<SettingsContentType> | null,
-    preGroupedTrades?: Record<string, TradeType[]>
-) => {
-    if (!trades || trades.length === 0) {
-        return {
-            labels: [],
-            datasets: [
-                {
-                    type: 'line' as const,
-                    label: 'Moyenne mobile',
-                    data: [],
-                    borderColor: '#6366f1',
-                    backgroundColor: '#6366f133',
-                    fill: false,
-                    tension: 0.2,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#6366f1',
-                    yAxisID: 'y',
-                },
-                {
-                    type: 'bar' as const,
-                    label: 'APPT',
-                    data: [],
-                    backgroundColor: '',
-                    borderRadius: 4,
-                    barPercentage: 0.6,
-                },
-            ],
-        }
-    }
-
-    const groupedTrades =
-        preGroupedTrades ?? groupTradesByPeriod(trades, mode, settings)
-    const periods = Object.keys(groupedTrades).sort()
-
-    const periodAppt = periods.map((period) =>
-        getAPPT(groupedTrades[period], true, 2, useNet)
-    )
-    const formattedLabels = periods.map((period) =>
-        formatDateByMode(period, mode)
-    )
-    const movingAverages = movingAverage(periodAppt, movingAvgWindow)
-
-    return {
-        labels: formattedLabels,
-        datasets: [
-            {
-                type: 'line' as const,
-                label: `Moyenne mobile (${movingAvgWindow})`,
-                data: movingAverages,
-                borderColor: '#6366f1',
-                backgroundColor: '#6366f133',
-                fill: false,
-                tension: 0.2,
-                pointRadius: 3,
-                pointBackgroundColor: '#6366f1',
-                yAxisID: 'y',
-            },
-            {
-                type: 'bar' as const,
-                label: 'APPT',
-                data: periodAppt,
-                backgroundColor: '#4ade80',
-                borderRadius: 4,
-                barPercentage: 0.6,
-            },
-        ],
-    }
-}
-
-// Génère les données pour le graphique de P/L Ratio
-export const generatePlRatioChartData = (
-    trades: TradeType[],
-    mode: 'day' | 'week' | 'month' | 'year',
-    movingAvgWindow: number,
-    settings: Partial<SettingsContentType> | null
-) => {
-    if (!trades || trades.length === 0) {
-        return {
-            labels: [],
-            datasets: [
-                {
-                    type: 'line' as const,
-                    label: 'Moyenne mobile',
-                    data: [],
-                    borderColor: '#6366f1',
-                    backgroundColor: '#6366f133',
-                    fill: false,
-                    tension: 0.2,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#6366f1',
-                    yAxisID: 'y',
-                },
-                {
-                    type: 'bar' as const,
-                    label: 'P/L Ratio',
-                    data: [],
-                    backgroundColor: '#f59e0b',
-                    borderRadius: 4,
-                    barPercentage: 0.6,
-                },
-            ],
-        }
-    }
-
-    const groupedTrades = groupTradesByPeriod(trades, mode, settings)
-    const periods = Object.keys(groupedTrades).sort()
-
-    const periodPlRatio = periods.map((period) =>
-        calculatePLRatio(groupedTrades[period], 2)
-    )
-    const formattedLabels = periods.map((period) =>
-        formatDateByMode(period, mode)
-    )
-    const movingAverages = movingAverage(periodPlRatio, movingAvgWindow)
-
-    return {
-        labels: formattedLabels,
-        datasets: [
-            {
-                type: 'line' as const,
-                label: `Moyenne mobile (${movingAvgWindow})`,
-                data: movingAverages,
-                borderColor: '#6366f1',
-                backgroundColor: '#6366f133',
-                fill: false,
-                tension: 0.2,
-                pointRadius: 3,
-                pointBackgroundColor: '#6366f1',
-                yAxisID: 'y',
-            },
-            {
-                type: 'bar' as const,
-                label: 'P/L Ratio',
-                data: periodPlRatio,
-                backgroundColor: '#f59e0b',
-                borderRadius: 4,
-                barPercentage: 0.6,
-            },
-        ],
-    }
-}
-
-// Génère les données pour le graphique Winrate
-export const generateWinrateChartData = (
-    trades: TradeType[],
-    mode: 'day' | 'week' | 'month' | 'year',
-    movingAvgWindow: number,
-    useNet: boolean,
-    settings: Partial<SettingsContentType> | null,
-    preGroupedTrades?: Record<string, TradeType[]>
-) => {
-    if (!trades || trades.length === 0) {
-        return {
-            labels: [],
-            datasets: [
-                {
-                    type: 'bar' as const,
-                    label: 'Winrate',
-                    data: [],
-                    backgroundColor: '',
-                    borderRadius: 4,
-                    barPercentage: 0.6,
-                },
-            ],
-        }
-    }
-
-    const groupedTrades =
-        preGroupedTrades ?? groupTradesByPeriod(trades, mode, settings)
-    const periods = Object.keys(groupedTrades).sort()
-
-    const periodWinrate = periods.map((period) =>
-        getWinrate(groupedTrades[period], 2, useNet)
-    )
-    const formattedLabels = periods.map((period) =>
-        formatDateByMode(period, mode)
-    )
-    const winrateMovingAvg = movingAverage(periodWinrate, movingAvgWindow)
-
-    return {
-        labels: formattedLabels,
-        datasets: [
-            {
-                type: 'line' as const,
-                label: `Moyenne mobile (${movingAvgWindow})`,
-                data: winrateMovingAvg,
-                borderColor: '#6366f1',
-                backgroundColor: '#6366f133',
-                fill: false,
-                tension: 0.2,
-                pointRadius: 3,
-                pointBackgroundColor: '#6366f1',
-                yAxisID: 'y',
-            },
-            {
-                type: 'bar' as const,
-                label: 'Winrate',
-                data: periodWinrate,
-                backgroundColor: '#f472b6',
-                borderRadius: 4,
-                barPercentage: 0.6,
-            },
-        ],
-    }
-}
-
 // --- Statistiques journalières ---
 
 type DailyPnl = {
@@ -1145,11 +838,6 @@ export const colorToRgba = (color: string, alpha: number = 1): string => {
     return `rgba(0, 0, 0, ${alpha})`
 }
 
-export const getBodyTextColor = (): string => {
-    if (typeof document === 'undefined') return '#111827'
-    return getComputedStyle(document.body).color
-}
-
 export const normalizeColorToHex = (color: string): string => {
     if (color.startsWith('#')) {
         return color.toUpperCase()
@@ -1263,18 +951,6 @@ export interface ScatterSeriesConfig {
     }
 }
 
-export interface HeatmapSeriesConfig {
-    data: [number | string, number | string, number][]
-    name?: string
-}
-
-export interface VisualMapConfig {
-    min: number
-    max: number
-    inRange?: { color?: string[] }
-    outOfRange?: { color?: string }
-}
-
 export const buildBarColors = (
     values: number[],
     positiveColor: string,
@@ -1356,56 +1032,6 @@ export const buildScatterSeries = (
     }
 }
 
-export const buildHeatmapSeries = (
-    config: HeatmapSeriesConfig,
-    isDark?: boolean
-): HeatmapSeriesOption => {
-    return {
-        name: config.name ?? 'Heatmap',
-        type: 'heatmap' as const,
-        data: config.data,
-        label: { show: false },
-        emphasis: {
-            itemStyle: {
-                borderColor: isDark ? '#ffffff' : '#1f2937',
-                borderWidth: 2,
-            },
-        },
-    }
-}
-
-export const buildVisualMap = (
-    config: VisualMapConfig,
-    isDark?: boolean
-): VisualMapComponentOption => {
-    return {
-        min: config.min,
-        max: config.max,
-        calculable: true,
-        orient: 'horizontal' as const,
-        left: 'center',
-        bottom: 0,
-        show: false,
-        inRange: config.inRange ?? {
-            color: [
-                '#000000',
-                '#2a1500',
-                '#552a00',
-                '#803f00',
-                '#ab5500',
-                '#d66a00',
-                '#ff8000',
-                '#ffaa33',
-                '#ffd480',
-                '#fff5cc',
-            ],
-        },
-        outOfRange: config.outOfRange ?? {
-            color: isDark ? '#111827' : '#f3f4f6',
-        },
-    }
-}
-
 export const echartsFontFamily =
     'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"'
 
@@ -1448,52 +1074,6 @@ export const getEchartsCenterTextGraphic = (
         fontFamily,
     },
 })
-
-export const echartsSeriesBase = {
-    emphasis: { disabled: true },
-}
-
-interface LabelContext {
-    dataset: { data: number[] }
-    dataIndex: number
-    chart: { scales: { y: { min: number; max: number } } }
-}
-
-export const getSmartLabelAlign = (context: LabelContext) => {
-    const value = context.dataset.data[context.dataIndex] as number
-    const chart = context.chart
-    const yScale = chart.scales.y
-
-    const yMin = yScale.min
-    const yMax = yScale.max
-    const range = yMax - yMin
-
-    const relativePosition = (value - yMin) / range
-
-    if (relativePosition > 0.9 || relativePosition < 0.1) {
-        return 'center'
-    }
-
-    return value >= 0 ? 'top' : 'bottom'
-}
-
-export const getSmartLabelAnchor = (context: LabelContext) => {
-    const value = context.dataset.data[context.dataIndex] as number
-    const chart = context.chart
-    const yScale = chart.scales.y
-
-    const yMin = yScale.min
-    const yMax = yScale.max
-    const range = yMax - yMin
-
-    const relativePosition = (value - yMin) / range
-
-    if (relativePosition > 0.9 || relativePosition < 0.1) {
-        return 'center'
-    }
-
-    return value >= 0 ? 'end' : 'start'
-}
 
 // --- Chart colors ---
 

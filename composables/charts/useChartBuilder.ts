@@ -465,7 +465,6 @@ export const useChartBuilder = () => {
 			},
 		}))
 
-		const { buildScatter2DDataZoom } = useChartAxis()
 		const dataZoom = buildScatter2DDataZoom(showScrollX, showScrollY)
 
 		return {
