@@ -1,4 +1,10 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { fileURLToPath } from 'node:url'
+
+// Résout un package en chemin absolu (vite alias exige un path absolu
+// sinon il duplique les modules résolus)
+const pkgPath = (name: string) => fileURLToPath(new URL(`./node_modules/${name}`, import.meta.url))
+
 export default defineNuxtConfig({
     compatibilityDate: '2024-11-01',
     devServer: {
@@ -80,11 +86,11 @@ export default defineNuxtConfig({
         resolve: {
             alias: {
                 'element-resize-detector': '~/shims/element-resize-detector.js',
-                '@milkdown/kit/utils': '@milkdown/utils',
-                '@milkdown/kit/ctx': '@milkdown/ctx',
-                '@milkdown/kit/transformer': '@milkdown/transformer',
-                '@milkdown/kit/core': '@milkdown/core',
-                '@milkdown/kit/prose': '@milkdown/prose',
+                '@milkdown/kit/utils': pkgPath('@milkdown/utils'),
+                '@milkdown/kit/ctx': pkgPath('@milkdown/ctx'),
+                '@milkdown/kit/transformer': pkgPath('@milkdown/transformer'),
+                '@milkdown/kit/core': pkgPath('@milkdown/core'),
+                '@milkdown/kit/prose': pkgPath('@milkdown/prose'),
             },
             dedupe: [
                 '@milkdown/core',
