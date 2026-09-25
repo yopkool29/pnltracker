@@ -122,6 +122,10 @@ const toRMultipleTrades = (trades: TradeExtendedType[]): RMultipleTrade[] =>
         metadata: getRMultipleMetadata(trade.metadata),
     }))
 
+// Convention du codebase : round < 0 = pas d'arrondi
+// (comme getTotalRMultiple/getSQN — round(2, -1) retournerait 0)
+const roundR = (value: number, round: number) => (round < 0 ? value : _round(value, round))
+
 const calculateRPerformance = (
     trades: TradeExtendedType[],
     options: TradePerformanceOptions
@@ -145,15 +149,15 @@ const calculateRPerformance = (
     const avgLoss = countLoss > 0 ? sumLoss / countLoss : 0
     const largestWin = countWin > 0 ? Math.max(...winningRs) : null
     const largestLoss = countLoss > 0 ? Math.min(...losingRs) : null
-    const totalR = hasRMultiples ? _round(sumWin + sumLoss, options.round) : null
+    const totalR = hasRMultiples ? roundR(sumWin + sumLoss, options.round) : null
     const apptR = hasRMultiples && rMultiples.length > 0
-        ? _round((sumWin + sumLoss) / rMultiples.length, options.round)
+        ? roundR((sumWin + sumLoss) / rMultiples.length, options.round)
         : null
     const profitFactorR = hasRMultiples && sumLoss !== 0
-        ? _round(sumWin / Math.abs(sumLoss), options.round)
+        ? roundR(sumWin / Math.abs(sumLoss), options.round)
         : null
     const plRatioR = hasRMultiples && avgLoss !== 0
-        ? _round(avgWin / Math.abs(avgLoss), options.round)
+        ? roundR(avgWin / Math.abs(avgLoss), options.round)
         : null
 
     return {
@@ -165,12 +169,12 @@ const calculateRPerformance = (
         apptR,
         profitFactorR,
         plRatioR,
-        avgWinR: hasRMultiples ? _round(avgWin, options.round) : null,
-        avgLossR: hasRMultiples ? _round(avgLoss, options.round) : null,
-        largestWinR: largestWin !== null ? _round(largestWin, options.round) : null,
-        largestLossR: largestLoss !== null ? _round(largestLoss, options.round) : null,
-        totalProfitR: hasRMultiples ? _round(sumWin, options.round) : null,
-        totalLossR: hasRMultiples ? _round(sumLoss, options.round) : null,
+        avgWinR: hasRMultiples ? roundR(avgWin, options.round) : null,
+        avgLossR: hasRMultiples ? roundR(avgLoss, options.round) : null,
+        largestWinR: largestWin !== null ? roundR(largestWin, options.round) : null,
+        largestLossR: largestLoss !== null ? roundR(largestLoss, options.round) : null,
+        totalProfitR: hasRMultiples ? roundR(sumWin, options.round) : null,
+        totalLossR: hasRMultiples ? roundR(sumLoss, options.round) : null,
         sqn: hasRMultiples ? getSQN(rMultiples, options.round) : 0,
     }
 }
