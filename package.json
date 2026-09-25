@@ -136,6 +136,9 @@
       "@milkdown/utils": "7.21.2",
       "@milkdown/transformer": "7.21.2",
       "@milkdown/prose": "7.21.2"
+    },
+    "patchedDependencies": {
+      "@nuxt/test-utils": "patches/@nuxt__test-utils.patch"
     }
   },
   "devDependencies": {
@@ -163,7 +166,7 @@
     "sass": "^1.89.2",
     "tailwindcss": "^4.1.11",
     "ufo": "^1.6.1",
-    "vite": "^8.0.8",
+    "vite": "^7.3.5",
     "vitest": "^3.2.4"
   }
 }
