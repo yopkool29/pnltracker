@@ -14,6 +14,22 @@ contournement des bugs WebKitGTK.
 - `tauri.conf.json` : conf dev (`devUrl` → `localhost:3003`)
 - `tauri.prod.conf.json` : conf prod (`frontendDist` → `.output/public`, postgres embarqué)
 
+### Code partagé avec src-tauri
+
+Les deux crates (Tauri 2 et Tauri 3) incluent les mêmes sources via
+`#[path]` vers `tauri-shared/` à la racine — un seul fichier physique,
+compilé par chaque crate contre sa propre version de `tauri` :
+
+- `tauri-shared/desktop.rs` / `desktop_windows.rs` / `desktop_common.rs` :
+  cycle de vie postgres embarqué, app_log, helpers fs/process
+- `tauri-shared/app_common.rs` : commands (`close_splashscreen`, `quit_app`,
+  `set_app_language`), `AppLanguage`, handlers `on_window_event`
+  (dialogue de confirmation de fermeture) et `app.run`
+
+Spécifique à chaque crate : `main.rs`, `run()` (runtime, plugins, workarounds),
+`cef_focus.rs`. Si une évolution Tauri v3 rend un fichier partagé
+incompatible entre v2 et v3, revenir à des copies séparées.
+
 ## Dépendances
 
 Tout l'écosystème Tauri vient de **git**, pas de crates.io (`[patch.crates-io]`
