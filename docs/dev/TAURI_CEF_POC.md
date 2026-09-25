@@ -128,6 +128,13 @@ binaire — RAM dev complète), `pnpm tauri-cef:build` / `:build:exe` (prod,
 `/home/patrice/gtk4-dev-local/root/usr/lib/x86_64-linux-gnu/pkgconfig`
 (GTK4 dev extrait localement, pas installé système).
 
+Sur un build host sans GTK4 (ou trop vieux, ex. Ubuntu 22.04 = gtk4 4.6
+insuffisant, APIs 4.10-4.12 requises) : créer un arbre `pkgconfig` local
+avec `.pc` au prefix local + `.so` récentes, relaxer les contraintes de
+version `Requires` des `.pc`, et le `--allow-shlib-undefined` de
+`build.rs` couvre le cas où les `.so` visent une glibc plus récente que
+celle du host (deps internes résolues à l'exécution sur la cible).
+
 ## Prod
 
 `pnpm tauri-cef:build:exe` → `target/release/pnltracker-desktop-cef`.
