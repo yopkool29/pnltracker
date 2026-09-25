@@ -90,6 +90,10 @@ export default defineNuxtConfig({
                 '@fontsource/plus-jakarta-sans',
                 '@fontsource/archivo',
                 '@fontsource/source-sans-3',
+                'vue-grid-layout-v3',
+                'idb-keyval',
+                '@tauri-apps/plugin-dialog',
+                '@tauri-apps/plugin-fs',
             ]
         },
         resolve: {
