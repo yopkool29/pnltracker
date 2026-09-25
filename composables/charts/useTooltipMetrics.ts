@@ -3,7 +3,7 @@ import type { BreakdownMetric, TradeTooltipField } from '~/type'
 import type { BreakdownMetrics } from '~/composables/analytics/breakdownMetrics'
 import type { TradeExtendedType } from '~/schema/trade'
 import { getMetricValueForMetric, formatMetricValueForMetric } from '~/composables/analytics/breakdownMetrics'
-import { metricOptions, tradeTooltipOptions } from '~/composables/dashboard/useBreakdownConfig'
+import { metricOptions, tradeTooltipOptions } from '~/composables/dashboard/breakdownTemplates'
 import { formatTradeTooltipField } from '~/utils/chartFormat'
 
 // Construit les lignes d'un tooltip ECharts : titre (en gras) + lignes principales + extras.

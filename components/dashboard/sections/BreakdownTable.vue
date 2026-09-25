@@ -31,7 +31,7 @@ import { getGroupFn } from '~/composables/analytics/useBreakdownGrouping'
 import { injectEmptyTagMetrics, getMetricValueForMetric, formatMetricValueForMetric } from '~/composables/analytics/breakdownMetrics'
 import type { BreakdownMetrics } from '~/composables/analytics/breakdownMetrics'
 import type { TimezoneSettings } from '~/composables/analytics/useAnalytics'
-import { defaultTableColumns, migrateDimension } from '~/composables/dashboard/useBreakdownConfig'
+import { defaultTableColumns, migrateDimension } from '~/composables/dashboard/breakdownTemplates'
 import { isMonetaryMetric } from '~/utils/echarts'
 import { formatDimensionLabel } from '~/utils/chartFormat'
 

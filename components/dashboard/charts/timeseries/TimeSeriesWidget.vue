@@ -94,7 +94,7 @@ import { calculateMetricsByDimension } from '~/composables/analytics/useAnalytic
 import { getMetricValueForMetric, formatMetricValueForMetric } from '~/composables/analytics/breakdownMetrics'
 import type { BreakdownMetrics } from '~/composables/analytics/breakdownMetrics'
 import { useTooltipMetrics } from '~/composables/charts/useTooltipMetrics'
-import { tradeTooltipOptions } from '~/composables/dashboard/useBreakdownConfig'
+import { tradeTooltipOptions } from '~/composables/dashboard/breakdownTemplates'
 import type { TradeExtendedType } from '~/schema/trade'
 import { useTimeSeriesConfig } from '~/composables/charts/useTimeSeriesConfig'
 import { buildTimeSeriesChartOption } from '~/composables/charts/builders/timeSeriesChart'

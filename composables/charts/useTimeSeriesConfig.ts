@@ -1,5 +1,5 @@
 import type { TimeSeriesConfig, TimeSeriesAggregation, BreakdownMetric } from '~/type'
-import { metricOptions } from '~/composables/dashboard/useBreakdownConfig'
+import { metricOptions } from '~/composables/dashboard/breakdownTemplates'
 
 type AggregationMode = 'day' | 'week' | 'month'
 
