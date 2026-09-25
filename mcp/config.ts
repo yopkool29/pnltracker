@@ -6,6 +6,7 @@ import { join } from 'node:path'
 
 const McpConfigSchema = z.object({
 	apiToken: z.string().min(1),
+	apiUrl: z.string().min(1).optional(),
 	requestTimeoutMs: z.number().int().min(1000).max(60000),
 	maxResponseBytes: z.number().int().min(1024).max(10 * 1024 * 1024),
 })

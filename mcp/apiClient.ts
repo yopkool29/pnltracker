@@ -50,14 +50,14 @@ export class PnlTrackerApiClient {
 	}
 
 	private async requestJson(method: 'GET' | 'POST' | 'DELETE', path: string, options: RequestOptions, body?: unknown): Promise<unknown> {
-		const url = new URL(path, `${resolveApiUrl()}/`)
+		const url = new URL(path, `${this.config.apiUrl ?? resolveApiUrl()}/`)
 		for (const [key, value] of Object.entries(options.query)) {
 			if (value !== undefined) url.searchParams.set(key, String(value))
 		}
 
 		const headers = new Headers({
 			accept: 'application/json',
-			'x-api-token': resolveApiToken(),
+			'x-api-token': this.config.apiToken || resolveApiToken(),
 		})
 		if (body !== undefined) headers.set('content-type', 'application/json')
 		if (options.databaseId !== undefined) headers.set('x-database-id', String(options.databaseId))
@@ -97,13 +97,13 @@ export class PnlTrackerApiClient {
 	}
 
 	async getBinary(path: string, options: RequestOptions): Promise<{ buffer: Buffer, mimeType: string }> {
-		const url = new URL(path, `${resolveApiUrl()}/`)
+		const url = new URL(path, `${this.config.apiUrl ?? resolveApiUrl()}/`)
 		for (const [key, value] of Object.entries(options.query)) {
 			if (value !== undefined) url.searchParams.set(key, String(value))
 		}
 
 		const headers = new Headers({
-			'x-api-token': resolveApiToken(),
+			'x-api-token': this.config.apiToken || resolveApiToken(),
 		})
 		if (options.databaseId !== undefined) headers.set('x-database-id', String(options.databaseId))
 
