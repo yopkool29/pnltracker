@@ -159,6 +159,12 @@ Gotchas AppImage (à reporter dans le workflow CI) :
   `useful-tools/lib/*.c` qui ont été déplacés upstream vers
   `Anylinux-sharun` (404 → 5 retries → échec)
 - `xvfb-run` absent = warning inoffensif avec `STRACE_MODE=0`
+- Sur un build host dont la glibc est plus vieille que celle des `.so`
+  liées : `quick-sharun` échoue sur `ldd | grep "not found"` qui matche
+  les erreurs `version 'GLIBC_*' not found`. Le script est re-téléchargé
+  à chaque build (pas patchable en cache) → shim `ldd` dans le PATH qui
+  filtre ces lignes + `LD_LIBRARY_PATH` vers les libs pour que la
+  résolution réussisse
 - `productName`/`identifier` identiques à la version Tauri 2 : mêmes données
   (data dir partagé) mais impossible de lancer les deux en même temps —
   à revoir si on publie les artifacts sur GitHub
