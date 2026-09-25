@@ -16,7 +16,9 @@ export default defineEventHandler(async (event) => {
 		const { prisma } = await getApiContext(event)
 		const body = await parseBody(event, AppendMcpJournalSchema)
 		const timestamp = new Date().toISOString()
-		const entry = `_Enregistré le ${timestamp}_\n\n${body.content}`
+		const entry = body.title
+			? `## ${body.title}\n\n_Enregistré le ${timestamp}_\n\n${body.content}`
+			: `_Enregistré le ${timestamp}_\n\n${body.content}`
 
 		const note = await prisma.$transaction(async (transaction) => {
 			await transaction.$queryRaw`SELECT pg_advisory_xact_lock(${mcpJournalLockId})::text AS lock`
