@@ -1,6 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
     compatibilityDate: '2024-11-01',
+    // quick-sharun crée des symlinks auto-référents dans l'AppDir
+    // (lib/x86_64-linux-gnu -> .) qui font planter chokidar (ELOOP)
+    ignore: ['tauri-cef-linux/**'],
     devServer: {
         port: 3001,
     },
