@@ -704,6 +704,7 @@ export default {
                 templates_advanced_trades: 'Series / Trades',
             },
             sections: {
+                metrics_cards: 'Metric Cards',
                 all_trades: 'All Trades',
                 profit_trades: 'Winning Trades',
                 losing_trades: 'Losing Trades',

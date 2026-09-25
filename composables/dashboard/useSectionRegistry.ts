@@ -6,6 +6,7 @@ export interface SectionRegistration {
 }
 
 const sectionRegistry: SectionRegistration[] = [
+	{ id: 'metricsCards', defaultVisible: true },
 	{ id: 'allTrades', defaultVisible: true },
 	{ id: 'profitTrades', defaultVisible: true },
 	{ id: 'losingTrades', defaultVisible: true },

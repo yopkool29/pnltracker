@@ -92,6 +92,9 @@ import { breakdownTemplatesBySubcategory, advancedTemplatesBySubcategory, useBre
 const props = defineProps<{
 	chartVisibility: Record<string, boolean>
 	sectionVisibility: Record<SectionKey, boolean>
+	// Workspace summary : les clés absentes de la config sauvegardée héritent
+	// de la visibilité par défaut (les autres workspaces gardent strictement leur config)
+	mergeDefaults?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -108,7 +111,10 @@ type SectionOption = { id: SectionKey; label: string }
 // Plus aucun chart fixe — tous migrés vers les templates
 const fixedChartOptions = computed<ChartOption[]>(() => [])
 
+const { getDefaultSectionVisibility } = useMetricsSectionRegistry()
+
 const sectionOptions = computed<SectionOption[]>(() => [
+	{ id: 'metricsCards', label: t('components.dashboard.sections.metrics_cards') },
 	{ id: 'allTrades', label: t('components.dashboard.sections.all_trades') },
 	{ id: 'profitTrades', label: t('components.dashboard.sections.profit_trades') },
 	{ id: 'losingTrades', label: t('components.dashboard.sections.losing_trades') },
@@ -151,15 +157,20 @@ const onCreateFromTemplate = (templateId: string) => {
 	}
 }
 
+// Les clés absentes de la config sauvegardée (ex. nouvelle section) prennent
+// la visibilité par défaut — uniquement sur le workspace summary (mergeDefaults)
+const withDefaultSectionVisibility = (val: Record<SectionKey, boolean>): Record<SectionKey, boolean> =>
+	props.mergeDefaults ? { ...getDefaultSectionVisibility(), ...val } : { ...val }
+
 const localChartVisibility = ref({ ...props.chartVisibility })
-const localSectionVisibility = ref({ ...props.sectionVisibility })
+const localSectionVisibility = ref(withDefaultSectionVisibility(props.sectionVisibility))
 
 watch(() => props.chartVisibility, (val) => {
 	localChartVisibility.value = { ...val }
 }, { deep: true })
 
 watch(() => props.sectionVisibility, (val) => {
-	localSectionVisibility.value = { ...val }
+	localSectionVisibility.value = withDefaultSectionVisibility(val)
 }, { deep: true })
 
 const isOpen = ref(false)
@@ -168,7 +179,7 @@ const isApplying = ref(false)
 
 const onModalClosed = () => {
 	localChartVisibility.value = { ...props.chartVisibility }
-	localSectionVisibility.value = { ...props.sectionVisibility }
+	localSectionVisibility.value = withDefaultSectionVisibility(props.sectionVisibility)
 	syncAllBreakpoints.value = false
 }
 
@@ -201,7 +212,7 @@ const clearAll = () => {
 
 const cancelChanges = () => {
 	localChartVisibility.value = { ...props.chartVisibility }
-	localSectionVisibility.value = { ...props.sectionVisibility }
+	localSectionVisibility.value = withDefaultSectionVisibility(props.sectionVisibility)
 	isOpen.value = false
 }
 </script>

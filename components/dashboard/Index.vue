@@ -60,44 +60,6 @@
             </template>
         </UCard>
 
-        <div class="flex flex-col gap-4 max-w-5xl mb-8">
-            <!-- Overview : Cards (Nuxt UI) -->
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
-                <div class="dashboard-card">
-                    <span class="dashboard-card-label">{{ $t('components.dashboard.index.trades_count') }}:</span>
-                    <span class="dashboard-card-value" :title="$t('components.dashboard.index.trades_count_tooltip')">{{ dashBoardResult.tradesCount }}</span>
-                </div>
-                <div class="dashboard-card">
-                    <span class="dashboard-card-label">{{ $t('components.dashboard.index.cumulated_pnl') }}:</span>
-                    <span class="dashboard-card-value" :title="$t('components.dashboard.index.cumulated_pnl_tooltip')">{{ formatCurrency(dashBoardResult.pnl) }}</span>
-                </div>
-                <div class="dashboard-card">
-                    <span class="dashboard-card-label">{{ $t('components.dashboard.index.expectancy') }}:</span>
-                    <span class="dashboard-card-value" :title="$t('components.dashboard.index.expectancy_tooltip')">{{ formatCurrency(dashBoardResult.appt) }}</span>
-                </div>
-                <div class="dashboard-card">
-                    <span class="dashboard-card-label">{{ $t('components.dashboard.index.pl_ratio') }}:</span>
-                    <span class="dashboard-card-value" :title="$t('components.dashboard.index.pl_ratio_tooltip')">{{ dashBoardResult.plRatio?.toFixed(2) }}</span>
-                </div>
-                <div class="dashboard-card">
-                    <span class="dashboard-card-label">{{ $t('components.dashboard.index.win_rate') }}:</span>
-                    <span class="dashboard-card-value" :title="$t('components.dashboard.index.win_rate_tooltip')">{{ dashBoardResult.winrate?.toFixed(2) }}%</span>
-                </div>
-                <div class="dashboard-card">
-                    <span class="dashboard-card-label">{{ $t('components.dashboard.index.profit_factor') }}:</span>
-                    <span class="dashboard-card-value" :title="$t('components.dashboard.index.profit_factor_tooltip')">{{ formatNumberValue(dashBoardResult.profitFactor) }}</span>
-                </div>
-                <div class="dashboard-card">
-                    <span class="dashboard-card-label">{{ $t('components.dashboard.index.recovery_factor') }}:</span>
-                    <span class="dashboard-card-value" :title="$t('components.dashboard.index.recovery_factor_tooltip')">{{ formatNumberValue(dashBoardResult.recoveryFactor) }}</span>
-                </div>
-                <div class="dashboard-card">
-                    <span class="dashboard-card-label">{{ $t('components.dashboard.index.sharpe_ratio') }}:</span>
-                    <span class="dashboard-card-value" :title="$t('components.dashboard.index.sharpe_ratio_tooltip')">{{ dashBoardResult.sharpeRatio?.toFixed(2) }}</span>
-                </div>
-            </div>
-        </div>
-
         <!-- Dashboard workspaces : onglets + contenu -->
         <div class="mb-8">
             <!-- Barre d'onglets -->
@@ -174,18 +136,21 @@
                         v-if="currentBreakpoint === 'lg'"
                         v-model:chart-visibility="chartVisibilityLg"
                         v-model:section-visibility="sectionVisibilityLg"
+                        :merge-defaults="activeWorkspace?.id === 'summary'"
                         @sync-to-all-breakpoints="onSyncVisibilityToAllBreakpoints"
                     />
                     <DashboardVisibilityMenu
                         v-if="currentBreakpoint === 'md'"
                         v-model:chart-visibility="chartVisibilityMd"
                         v-model:section-visibility="sectionVisibilityMd"
+                        :merge-defaults="activeWorkspace?.id === 'summary'"
                         @sync-to-all-breakpoints="onSyncVisibilityToAllBreakpoints"
                     />
                     <DashboardVisibilityMenu
                         v-if="currentBreakpoint === 'sm'"
                         v-model:chart-visibility="chartVisibilitySm"
                         v-model:section-visibility="sectionVisibilitySm"
+                        :merge-defaults="activeWorkspace?.id === 'summary'"
                         @sync-to-all-breakpoints="onSyncVisibilityToAllBreakpoints"
                     />
                     <UButton
@@ -284,7 +249,6 @@
 import {
     periodOptions,
     resizableGridItems,
-    formatNumberValue,
 } from '~/utils/dashboard'
 import type { ChartKey, SectionKey, WorkspaceConfig, WorkspaceId } from '~/type'
 import { getDashboardGridComponents, getDashboardComponentProps, useDashboardBreakpoint, useDashboardGridLayout } from '~/composables/dashboard/useDashboardGridLayout'
@@ -293,11 +257,10 @@ import { useDashboardLayoutPersistence } from '~/composables/dashboard/useDashbo
 import { useDashboardWorkspaceSwitch } from '~/composables/dashboard/useDashboardWorkspaceSwitch'
 import { useDashboardData } from '~/composables/dashboard/useDashboardData'
 import { sectionKeys } from '~/type'
-const { formatCurrency } = useUtils()
 
 const userStore = useUserStore()
 const dbStateStore = useDbStateStore()
-const { fetchAccounts, accounts, dashBoardLastTrades, dashBoardResult, clearLastTrades } = useDashboard()
+const { fetchAccounts, accounts, dashBoardLastTrades, clearLastTrades } = useDashboard()
 const { displayModeNet } = useNetGrossDisplay()
 const { tagGroups, fetchGroups } = useTags()
 const chartsReady = ref(false)

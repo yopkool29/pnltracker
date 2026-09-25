@@ -43,9 +43,12 @@ export interface GridTemplateItem {
     w: number
     h: number
     i: string
+    // Inséré en haut (y=0) quand il manque à un layout sauvegardé
+    atTop?: boolean
 }
 
 export const defaultGridItemsLg: GridTemplateItem[] = [
+    { w: 12, h: 3, i: 'metricsCards', atTop: true },
     { w: 6, h: 6, i: 'timeSeries_defaultPnlByTrade' },
     { w: 6, h: 6, i: 'timeSeries_defaultCumulatedPnl' },
     { w: 6, h: 6, i: 'timeSeries_defaultAppt' },
@@ -62,6 +65,7 @@ export const defaultGridItemsLg: GridTemplateItem[] = [
 ]
 
 export const defaultGridItemsMd: GridTemplateItem[] = [
+    { w: 6, h: 4, i: 'metricsCards', atTop: true },
     { w: 6, h: 6, i: 'timeSeries_defaultPnlByTrade' },
     { w: 6, h: 6, i: 'timeSeries_defaultCumulatedPnl' },
     { w: 6, h: 6, i: 'timeSeries_defaultAppt' },
@@ -78,6 +82,7 @@ export const defaultGridItemsMd: GridTemplateItem[] = [
 ]
 
 export const defaultGridItemsSm: GridTemplateItem[] = [
+    { w: 3, h: 6, i: 'metricsCards', atTop: true },
     { w: 3, h: 6, i: 'timeSeries_defaultPnlByTrade' },
     { w: 3, h: 6, i: 'timeSeries_defaultCumulatedPnl' },
     { w: 3, h: 6, i: 'timeSeries_defaultAppt' },
@@ -103,7 +108,8 @@ const compactItems = (items: GridTemplateItem[], cols: number) => {
             currentY += rowHeight
             rowHeight = 0
         }
-        const positioned = { ...item, x: currentX, y: currentY }
+        const { atTop: _atTop, ...gridItem } = item
+        const positioned = { ...gridItem, x: currentX, y: currentY }
         currentX += item.w
         rowHeight = Math.max(rowHeight, item.h)
         return positioned
@@ -123,6 +129,7 @@ export const isResizableItem = (itemId: string): boolean => {
 }
 
 export const resizableGridItems = [
+    'metricsCards',
     'allTrades',
     'profitTrades',
     'losingTrades',

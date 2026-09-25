@@ -15,6 +15,7 @@ import DashboardSectionsLosingTradesSection from '~/components/dashboard/section
 import DashboardSectionsWinLossComparisonSection from '~/components/dashboard/sections/WinLossComparisonSection.vue'
 import DashboardSectionsRiskRatiosSection from '~/components/dashboard/sections/RiskRatiosSection.vue'
 import DashboardSectionsDayStatisticsSection from '~/components/dashboard/sections/DayStatisticsSection.vue'
+import DashboardSectionsMetricsCardsSection from '~/components/dashboard/sections/MetricsCardsSection.vue'
 
 export type DashboardBreakpoint = 'lg' | 'md' | 'sm'
 
@@ -29,6 +30,7 @@ type DashboardComponentProps = {
 }
 
 const fixedComponentMap: Record<string, Component> = {
+	metricsCards: DashboardSectionsMetricsCardsSection,
 	allTrades: DashboardSectionsAllTradesSection,
 	profitTrades: DashboardSectionsProfitTradesSection,
 	losingTrades: DashboardSectionsLosingTradesSection,
@@ -54,7 +56,8 @@ const appendMissingItems = (items: GridTemplateItem[], columns: number, startY: 
 			currentY += rowHeight
 			rowHeight = 0
 		}
-		result.push({ ...item, x: currentX, y: currentY })
+		const { atTop: _atTop, ...gridItem } = item
+		result.push({ ...gridItem, x: currentX, y: currentY })
 		currentX += item.w
 		rowHeight = Math.max(rowHeight, item.h)
 	}
@@ -102,6 +105,8 @@ export const useDashboardGridLayout = (
 	activeSectionVisibility: ComputedRef<Record<SectionKey, boolean>>,
 	currentBreakpoint: Ref<DashboardBreakpoint>,
 ) => {
+	const { getDefaultChartVisibility } = useMetricsChartRegistry()
+	const { getDefaultSectionVisibility } = useMetricsSectionRegistry()
 	const gridColNum = computed(() => currentBreakpoint.value === 'md' ? 6 : currentBreakpoint.value === 'sm' ? 3 : 12)
 	const defaultItemsForBreakpoint = computed(() => {
 		switch (currentBreakpoint.value) {
@@ -112,16 +117,40 @@ export const useDashboardGridLayout = (
 	})
 	const gridLayout = computed(() => {
 		const workspace = activeWorkspace.value
-		const visibility = { chartVisibility: activeChartVisibility.value, sectionVisibility: activeSectionVisibility.value }
+		// Seul le workspace summary hérite des défauts pour les clés absentes
+		// (ex. nouvelle section metricsCards) — les autres workspaces gardent
+		// strictement leur visibilité sauvegardée
+		const isSummary = workspace?.id === 'summary'
+		const visibility = {
+			chartVisibility: isSummary ? { ...getDefaultChartVisibility(), ...activeChartVisibility.value } : activeChartVisibility.value,
+			sectionVisibility: isSummary ? { ...getDefaultSectionVisibility(), ...activeSectionVisibility.value } : activeSectionVisibility.value,
+		}
 		const savedLayout = currentBreakpoint.value === 'md'
 			? workspace?.dashboardGridLayoutMd
 			: currentBreakpoint.value === 'sm' ? workspace?.dashboardGridLayoutSm : workspace?.dashboardGridLayout
 		if (savedLayout && savedLayout.length > 0) {
 			const savedKeys = new Set(savedLayout.map(item => item.i))
-			const visibleSaved = savedLayout.filter(item => isVisible(item.i, visibility))
 			const missingVisible = defaultItemsForBreakpoint.value.filter(item => !savedKeys.has(item.i) && isVisible(item.i, visibility))
+			const missingTop = missingVisible.filter(item => isSummary && item.atTop)
+			const missingRest = missingVisible.filter(item => !missingTop.includes(item))
+			const topItems = appendMissingItems(missingTop, gridColNum.value, 0)
+			const topOffset = topItems.reduce((max, item) => Math.max(max, item.y + item.h), 0)
+			const visibleSaved = savedLayout
+				.filter(item => isVisible(item.i, visibility))
+				.map(item => ({ ...item, y: (item.y ?? 0) + topOffset }))
+			// Un item "atTop" sauvegardé à y=0 reprend sa place en haut : on décale
+			// les items qui empiéteraient sur sa zone (ex. déplacés pendant qu'il était masqué)
+			if (isSummary) {
+				for (const topItem of visibleSaved) {
+					const isAtTop = defaultItemsForBreakpoint.value.some(d => d.atTop && d.i === topItem.i)
+					if (!isAtTop || (topItem.y ?? 0) !== 0) continue
+					for (const other of visibleSaved) {
+						if (other !== topItem && (other.y ?? 0) < topItem.h) other.y = (other.y ?? 0) + topItem.h
+					}
+				}
+			}
 			const maxY = visibleSaved.reduce((max, item) => Math.max(max, (item.y ?? 0) + item.h), 0)
-			return [...visibleSaved, ...appendMissingItems(missingVisible, gridColNum.value, maxY)]
+			return [...topItems, ...visibleSaved, ...appendMissingItems(missingRest, gridColNum.value, maxY)]
 		}
 		return appendMissingItems(defaultItemsForBreakpoint.value.filter(item => isVisible(item.i, visibility)), gridColNum.value, 0)
 	})

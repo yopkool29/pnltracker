@@ -4,9 +4,9 @@ import { defaultDashboardGridLayout, defaultDashboardGridLayoutMd, defaultDashbo
 // Les breakdowns ne sont plus dans les defaults — ils sont créés dynamiquement
 // par l'utilisateur via le menu visibilité (clés uniques par instance)
 export const defaultChartVisibility: Record<string, boolean> = { 'timeSeries_defaultPnlByTrade': true, 'timeSeries_defaultCumulatedPnl': true, 'timeSeries_defaultAppt': true, 'timeSeries_defaultWinrate': true, 'breakdownHeatmap_defaultHourDay': false, 'breakdownBarVertical_defaultWinrateByHour': false, 'breakdownBarVertical_defaultPnlByDayOfWeek': false }
-export const defaultSectionVisibility: Record<SectionKey, boolean> = { allTrades: true, profitTrades: true, losingTrades: true, winLossComparison: true, riskRatios: true, dayStatistics: false }
+export const defaultSectionVisibility: Record<SectionKey, boolean> = { metricsCards: true, allTrades: true, profitTrades: true, losingTrades: true, winLossComparison: true, riskRatios: true, dayStatistics: false }
 export const hiddenChartVisibility: Record<string, boolean> = { pnlBar: false, cumulatedPnl: false, appt: false, winrate: false, hourlyHeatmap: false, 'timeSeries_defaultPnlByTrade': false, 'timeSeries_defaultCumulatedPnl': false, 'timeSeries_defaultAppt': false, 'timeSeries_defaultWinrate': false, 'breakdownHeatmap_defaultHourDay': false, 'breakdownBarVertical_defaultWinrateByHour': false, 'breakdownBarVertical_defaultPnlByDayOfWeek': false }
-export const hiddenSectionVisibility: Record<SectionKey, boolean> = { allTrades: false, profitTrades: false, losingTrades: false, winLossComparison: false, riskRatios: false, dayStatistics: false }
+export const hiddenSectionVisibility: Record<SectionKey, boolean> = { metricsCards: false, allTrades: false, profitTrades: false, losingTrades: false, winLossComparison: false, riskRatios: false, dayStatistics: false }
 
 // Configs par défaut pour les instances de breakdown prédéfinies (clés fixes)
 export const defaultBreakdownConfigs: Record<string, BreakdownConfig> = {

@@ -714,6 +714,7 @@ export default {
                 templates_advanced_trades: 'Séries / Trades',
             },
             sections: {
+                metrics_cards: 'Cartes de métriques',
                 all_trades: 'Tous les trades',
                 profit_trades: 'Trades gagnants',
                 losing_trades: 'Trades perdants',
