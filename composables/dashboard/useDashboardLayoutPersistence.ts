@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue'
 import type { ChartKey, DashboardGridItem, SectionKey, WorkspaceConfig } from '~/type'
-import type { GridTemplateItem } from '~/utils/dashboard'
+import type { GridTemplateItem } from '~/utils/dashboardGrid'
 import type { DashboardBreakpoint } from '~/composables/dashboard/useDashboardGridLayout'
 
 type GridLayoutRef = {

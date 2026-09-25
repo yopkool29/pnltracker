@@ -2,26 +2,7 @@ import type { AccountType } from '~/schema/account'
 import type { TradeFilter } from '~/type'
 import { transformAdvancedFilters } from '~/utils/filter-utils'
 import { calculateTradePerformance } from '~/utils/tradePerformance'
-import {
-    getDailyPnlArray,
-    getTotalTradingDays,
-    getBusinessDaysFromTrades,
-    getWinningWeeksPercent,
-    getWinningMonthsPercent,
-    getWinningDaysCount,
-    getLosingDaysCount,
-    getBreakevenDaysCount,
-    getMaxConsecutiveWinningDays,
-    getMaxConsecutiveLosingDays,
-    getAverageDailyPnl,
-    getAverageWinningDayPnl,
-    getAverageLosingDayPnl,
-    getLargestProfitableDay,
-    getLargestLosingDay,
-    getDailyMaxDrawdownWithPercent,
-    getAverageDrawdown,
-    getAverageDrawdownPercent
-} from '~/utils/dashboard'
+import { getDailyPnlArray, getTotalTradingDays, getBusinessDaysFromTrades, getWinningWeeksPercent, getWinningMonthsPercent, getWinningDaysCount, getLosingDaysCount, getBreakevenDaysCount, getMaxConsecutiveWinningDays, getMaxConsecutiveLosingDays, getAverageDailyPnl, getAverageWinningDayPnl, getAverageLosingDayPnl, getLargestProfitableDay, getLargestLosingDay, getDailyMaxDrawdownWithPercent, getAverageDrawdown, getAverageDrawdownPercent } from '~/utils/dailyStats'
 
 export const buildFiltersForApi = (
     startDate: Date | null,

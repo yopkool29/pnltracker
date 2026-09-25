@@ -1,14 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { TradeType } from '~/schema/trade'
-import {
-	getWeekNumber,
-	formatDateByMode,
-	getPeriodDates,
-	groupTradesByPeriod,
-	periodTranslations,
-	periodOptions,
-	generateIntradayPnlChartData
-} from '~/utils/dashboard'
+import { getWeekNumber, formatDateByMode, getPeriodDates, groupTradesByPeriod, periodTranslations, periodOptions } from '~/utils/dashboardPeriods'
+import { generateIntradayPnlChartData } from '~/utils/chartData'
 
 const mockTrades = [
 	{ closeDate: '2024-01-15T11:00:00Z', profit: 100, netProfit: 95, lot: 1, openDate: '2024-01-15T10:00:00Z' },

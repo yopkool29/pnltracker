@@ -246,10 +246,8 @@
 </template>
 
 <script setup lang="ts">
-import {
-    periodOptions,
-    resizableGridItems,
-} from '~/utils/dashboard'
+import { periodOptions } from '~/utils/dashboardPeriods'
+import { resizableGridItems } from '~/utils/dashboardGrid'
 import type { ChartKey, SectionKey, WorkspaceConfig, WorkspaceId } from '~/type'
 import { getDashboardGridComponents, getDashboardComponentProps, useDashboardBreakpoint, useDashboardGridLayout } from '~/composables/dashboard/useDashboardGridLayout'
 import { useDashboardFilters } from '~/composables/dashboard/useDashboardFilters'

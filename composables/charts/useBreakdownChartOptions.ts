@@ -3,7 +3,7 @@ import type { BreakdownConfig } from '~/type'
 import type { TimezoneSettings } from '~/composables/analytics/useAnalytics'
 import { calculateMetricsBy2Dimensions } from '~/composables/analytics/useAnalytics'
 import { getGroupFn } from '~/composables/analytics/useBreakdownGrouping'
-import { formatDimensionLabel } from '~/utils/dashboard'
+import { formatDimensionLabel } from '~/utils/chartFormat'
 import { useChartBuilder } from '~/composables/charts/useChartBuilder'
 
 type BarOrientation = 'horizontal' | 'vertical'

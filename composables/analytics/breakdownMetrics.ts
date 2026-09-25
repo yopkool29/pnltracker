@@ -2,7 +2,7 @@ import type { BreakdownDimension, BreakdownMetric } from '~/type'
 import { getTagGroupName, isTagGroupDimension } from '~/type'
 import { formatDurationMinutes } from '~/utils/date-utils'
 import { formatCurrency } from '~/utils'
-import { isMonetaryMetric, profitFactorColor } from '~/utils/dashboard'
+import { isMonetaryMetric, profitFactorColor } from '~/utils/echarts'
 
 export interface BreakdownMetrics {
 	key: string

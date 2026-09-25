@@ -1,11 +1,7 @@
 import type { Component, ComputedRef, Ref } from 'vue'
 import type { ChartKey, DashboardGridItem, SectionKey, WorkspaceConfig } from '~/type'
-import {
-	defaultGridItemsLg,
-	defaultGridItemsMd,
-	defaultGridItemsSm,
-	type GridTemplateItem,
-} from '~/utils/dashboard'
+import type { GridTemplateItem } from '~/utils/dashboardGrid'
+import { defaultGridItemsLg, defaultGridItemsMd, defaultGridItemsSm } from '~/utils/dashboardGrid'
 import DashboardChartsBreakdownBreakdownWidget from '~/components/dashboard/charts/breakdown/BreakdownWidget.vue'
 import DashboardChartsTimeseriesTimeSeriesWidget from '~/components/dashboard/charts/timeseries/TimeSeriesWidget.vue'
 import DashboardChartsCalendarCalendarWidget from '~/components/dashboard/charts/calendar/CalendarWidget.vue'

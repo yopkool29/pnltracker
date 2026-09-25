@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import { useMetricsBaseSectionPattern } from '~/composables/dashboard/useBaseSectionPattern'
-import { formatNumberValue } from '~/utils/dashboard'
+import { formatNumberValue } from '~/utils/chartFormat'
 
 const { result, formatCurrency } = useMetricsBaseSectionPattern()
 </script>

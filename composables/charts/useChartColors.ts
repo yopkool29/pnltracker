@@ -1,4 +1,4 @@
-import { chartColors, hslColorForValue, monetaryColorForValue, winrateColor, profitFactorColor, isMonetaryMetric, getMetricCategory } from '~/utils/dashboard'
+import { chartColors, hslColorForValue, monetaryColorForValue, winrateColor, profitFactorColor, isMonetaryMetric, getMetricCategory } from '~/utils/echarts'
 
 // Composable pour accéder aux couleurs + thème actuel (à utiliser dans les composants Vue)
 export const useChartColors = () => {

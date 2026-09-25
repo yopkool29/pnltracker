@@ -1,6 +1,6 @@
 import type { ComputedRef } from 'vue'
-import { computeAxisBounds, scaleValue, inverseScaleValue, makeAxisLabel } from '~/utils/dashboard'
-import type { AxisBounds } from '~/utils/dashboard'
+import { computeAxisBounds, scaleValue, inverseScaleValue, makeAxisLabel } from '~/utils/echarts'
+import type { AxisBounds } from '~/utils/echarts'
 
 // Composable : gère le calcul des bornes et la transformation des valeurs
 // pour un axe donné. Utilisable par BreakdownWidget (scatter 2D, bar, bar vertical)

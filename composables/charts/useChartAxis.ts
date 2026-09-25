@@ -1,7 +1,7 @@
 import type { EChartsOption } from 'echarts'
 import type { BreakdownMetric } from '~/type'
-import { computeAxisBounds, scaleValue, makeAxisLabel } from '~/utils/dashboard'
-import type { AxisBounds } from '~/utils/dashboard'
+import { computeAxisBounds, scaleValue, makeAxisLabel } from '~/utils/echarts'
+import type { AxisBounds } from '~/utils/echarts'
 import { formatMetricValueForMetric } from '~/composables/analytics/breakdownMetrics'
 
 export interface AxisConfig {

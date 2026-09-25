@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { normalizeColorToHex } from '~/utils/dashboard'
+import { normalizeColorToHex } from '~/utils/chartFormat'
 
 const props = defineProps<{
     label: string

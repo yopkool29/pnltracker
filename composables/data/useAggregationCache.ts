@@ -1,4 +1,4 @@
-import { groupTradesByPeriod } from '~/utils/dashboard'
+import { groupTradesByPeriod } from '~/utils/dashboardPeriods'
 import type { TradeType } from '~/schema/trade'
 
 type GroupedTrades = Record<string, TradeType[]>

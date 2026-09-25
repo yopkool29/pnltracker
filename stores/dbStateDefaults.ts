@@ -1,5 +1,5 @@
 import type { SectionKey, BreakdownConfig, TimeSeriesConfig, WorkspaceConfig, DashBoardResult } from '~/type'
-import { defaultDashboardGridLayout, defaultDashboardGridLayoutMd, defaultDashboardGridLayoutSm } from '~/utils/dashboard'
+import { defaultDashboardGridLayout, defaultDashboardGridLayoutMd, defaultDashboardGridLayoutSm } from '~/utils/dashboardGrid'
 
 // Les breakdowns ne sont plus dans les defaults — ils sont créés dynamiquement
 // par l'utilisateur via le menu visibilité (clés uniques par instance)
