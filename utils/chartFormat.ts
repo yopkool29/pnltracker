@@ -1,8 +1,7 @@
 import type { BreakdownDimension, TradeTooltipField } from '~/type'
 import type { TradeExtendedType } from '~/schema/trade'
 import { formatDurationMinutes } from '~/utils/dates/duration'
-import { formatCurrency } from '~/utils'
-
+import { formatCurrency } from '~/utils/format'
 // --- Formatage ---
 
 export const formatNumberValue = (
@@ -51,7 +50,7 @@ export const formatDimensionLabel = (
 
 // --- Couleurs ---
 
-export const hexToRgba = (hex: string, alpha: number = 1): string => {
+const hexToRgba = (hex: string, alpha: number = 1): string => {
     hex = hex.replace('#', '')
 
     if (hex.length === 3) {
@@ -68,7 +67,7 @@ export const hexToRgba = (hex: string, alpha: number = 1): string => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
-export const rgbaToHex = (rgba: string): string => {
+const rgbaToHex = (rgba: string): string => {
     const match = rgba.match(/rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)/)
 
     if (!match) {

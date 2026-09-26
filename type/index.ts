@@ -78,7 +78,7 @@ export interface TradeOptions {
     lastFilterColumn: string
 }
 
-export type ChartKey = 'pnlBar' | 'cumulatedPnl' | 'appt' | 'winrate' | 'hourlyHeatmap' | string
+export type ChartKey = 'pnlBar' | 'cumulatedPnl' | 'appt' | 'winrate' | string
 export type SectionKey = 'metricsCards' | 'allTrades' | 'profitTrades' | 'losingTrades' | 'winLossComparison' | 'riskRatios' | 'dayStatistics'
 
 // Liste des clés de sections (source de vérité unique)

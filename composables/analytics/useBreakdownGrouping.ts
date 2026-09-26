@@ -48,7 +48,7 @@ export const groupByMonthYearOpen = (tz?: TimezoneSettings): GroupFn => (t) => {
 	return [`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`]
 }
 
-export const groupByMonthYearClose = (tz?: TimezoneSettings): GroupFn => (t) => {
+const groupByMonthYearClose = (tz?: TimezoneSettings): GroupFn => (t) => {
 	if (tz) {
 		const { year, month } = getHourAndWeekdayInUserTimezone(new Date(t.closeDate), tz.timezoneDisplay, tz.timezoneLocal, tz.timezoneUtcOffset)
 		return [`${year}-${String(month + 1).padStart(2, '0')}`]
@@ -102,7 +102,7 @@ export const groupByHourEnd = (tz?: TimezoneSettings): GroupFn => (t) => {
 
 // By Tag Group : filtre les tags du trade par groupId, retourne le nom du tag
 // Un trade sans tag de ce groupe n'est pas groupé (pas d'entrée 'untagged')
-export const groupByTagGroup = (groupId: number): GroupFn => (t) => {
+const groupByTagGroup = (groupId: number): GroupFn => (t) => {
 	if (!t.tags || t.tags.length === 0) return []
 	const tagsInGroup = t.tags.filter(tag => tag.groupId === groupId)
 	if (tagsInGroup.length === 0) return []
@@ -111,7 +111,7 @@ export const groupByTagGroup = (groupId: number): GroupFn => (t) => {
 
 // Map dimension → factory de groupFn (accepte timezone settings optionnels)
 // Les dimensions non temporelles ignorent le paramètre tz
-export const dimensionGroupFnFactories: Record<string, (tz?: TimezoneSettings) => GroupFn> = {
+const dimensionGroupFnFactories: Record<string, (tz?: TimezoneSettings) => GroupFn> = {
 	ticker: () => groupByTicker,
 	tag: () => groupByTag,
 	side: () => groupBySide,

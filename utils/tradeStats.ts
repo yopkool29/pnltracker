@@ -1,5 +1,5 @@
 import { startOfDay, endOfDay } from 'date-fns';
-import { round as _round } from "~/utils";
+import { round as _round } from '~/utils/format'
 
 export const sortTradesByCloseDate = <T extends { closeDate: Date | string }>(trades: T[]): T[] => {
     return [...trades].sort((left, right) => new Date(left.closeDate).getTime() - new Date(right.closeDate).getTime())

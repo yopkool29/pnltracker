@@ -2,7 +2,7 @@ import { CreateAccountSchema, type AccountType, type CreateAccountType, type Upd
 import type { CustomField } from '~/schema/symbol'
 import type { FormSubmitEvent, FormErrorEvent } from '@nuxt/ui'
 import type { TradeFilter, FilterColumn } from '~/type'
-import { metadataHelpers } from '~/utils'
+import { metadataHelpers } from '~/utils/metadataHelpers'
 import { getAliasDisplay } from '~/utils/aliasResolver'
 
 type AccountMetadata = { customFields?: { key: string; value?: string }[] }

@@ -1,6 +1,6 @@
 import type { SectionKey } from '~/type'
 
-export interface SectionRegistration {
+interface SectionRegistration {
 	id: SectionKey
 	defaultVisible: boolean
 }

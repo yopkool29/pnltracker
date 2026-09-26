@@ -1,14 +1,5 @@
 import type { ChartKey, SectionKey, WorkspaceConfig } from '~/type'
 
-export interface GridVisibilityConfig {
-	chartVisibilityLg: Record<ChartKey, boolean>
-	chartVisibilityMd: Record<ChartKey, boolean>
-	chartVisibilitySm: Record<ChartKey, boolean>
-	sectionVisibilityLg: Record<SectionKey, boolean>
-	sectionVisibilityMd: Record<SectionKey, boolean>
-	sectionVisibilitySm: Record<SectionKey, boolean>
-}
-
 export const useGridVisibility = (
 	activeWorkspace: ComputedRef<WorkspaceConfig | null>,
 	updateActiveWorkspace: (patch: Partial<WorkspaceConfig>) => void,

@@ -4,7 +4,14 @@ import type { TimezoneSettings } from '~/composables/analytics/useAnalytics'
 import { calculateMetricsBy2Dimensions } from '~/composables/analytics/useAnalytics'
 import { getGroupFn } from '~/composables/analytics/useBreakdownGrouping'
 import { formatDimensionLabel } from '~/utils/chartFormat'
-import { useChartBuilder } from '~/composables/charts/useChartBuilder'
+import { useChartBuilderContext } from '~/composables/charts/builders/context'
+import { buildBarChartOption } from '~/composables/charts/builders/barChart'
+import { buildScatterChartOption } from '~/composables/charts/builders/scatterChart'
+import { buildScatter2DChartOption } from '~/composables/charts/builders/scatter2DChart'
+import { buildScatterTradesChartOption } from '~/composables/charts/builders/scatterTradesChart'
+import { buildHeatmapChartOption } from '~/composables/charts/builders/heatmapChart'
+import { buildBoxplotChartOption } from '~/composables/charts/builders/boxplotChart'
+import { buildRadarChartOption } from '~/composables/charts/builders/radarChart'
 
 type BarOrientation = 'horizontal' | 'vertical'
 
@@ -23,7 +30,7 @@ export const useBreakdownChartOptions = (
 	const { profitColor, lossColor, barColor, rawMetricColor, heatmapColors, scatter2DColors } = useTypeColors('timeSeriesChart')
 	const dataStore = useDataStore()
 	const dbStateStore = useDbStateStore()
-	const { buildBarChartOption, buildScatterChartOption, buildScatter2DChartOption, buildScatterTradesChartOption, buildHeatmapChartOption, buildBoxplotChartOption, buildRadarChartOption } = useChartBuilder()
+	const builderCtx = useChartBuilderContext()
 
 	const chartColors = computed(() => ({
 		profit: profitColor.value,
@@ -32,7 +39,7 @@ export const useBreakdownChartOptions = (
 		rawMetric: rawMetricColor.value,
 	}))
 
-	const buildBarOption = (orientation: BarOrientation) => buildBarChartOption({
+	const buildBarOption = (orientation: BarOrientation) => buildBarChartOption(builderCtx, {
 		metrics: filteredMetrics.value,
 		dimension: config.value.dimension,
 		metric: config.value.metric,
@@ -45,7 +52,7 @@ export const useBreakdownChartOptions = (
 	const barChartOption = computed<EChartsOption>(() => buildBarOption('horizontal'))
 	const barVerticalChartOption = computed<EChartsOption>(() => buildBarOption('vertical'))
 
-	const scatterChartOption = computed<EChartsOption>(() => buildScatterChartOption({
+	const scatterChartOption = computed<EChartsOption>(() => buildScatterChartOption(builderCtx, {
 		metrics: filteredMetrics.value,
 		dimension: config.value.dimension,
 		metric: config.value.metric,
@@ -55,7 +62,7 @@ export const useBreakdownChartOptions = (
 	}))
 
 	const scatter2DChartOption = computed<EChartsOption>(() => {
-		return buildScatter2DChartOption({
+		return buildScatter2DChartOption(builderCtx, {
 			metrics: filteredMetrics.value,
 			dimension: config.value.dimension,
 			metricX: config.value.metric,
@@ -76,7 +83,7 @@ export const useBreakdownChartOptions = (
 		const trades = tickerFilter
 			? allTrades.value.filter(tr => tr.symbol === tickerFilter)
 			: allTrades.value
-		return buildScatterTradesChartOption({
+		return buildScatterTradesChartOption(builderCtx, {
 			trades,
 			propX: config.value.tradePropertyX ?? 'duration',
 			propY: config.value.tradePropertyY ?? 'pnl',
@@ -105,7 +112,7 @@ export const useBreakdownChartOptions = (
 	})
 
 	const heatmapChartOption = computed<EChartsOption>(() => {
-		return buildHeatmapChartOption({
+		return buildHeatmapChartOption(builderCtx, {
 			cells: heatmap2DCells.value,
 			dimensionX: config.value.dimension,
 			dimensionY: config.value.dimension2 ?? 'dayOfWeekOpen',
@@ -160,7 +167,7 @@ export const useBreakdownChartOptions = (
 
 	const boxplotChartOption = computed<EChartsOption>(() => {
 		const { categories, data, rawTrades } = boxplotData.value
-		return buildBoxplotChartOption({
+		return buildBoxplotChartOption(builderCtx, {
 			categories,
 			data,
 			rawTrades,
@@ -199,7 +206,7 @@ export const useBreakdownChartOptions = (
 
 	const radarChartOption = computed<EChartsOption>(() => {
 		const { indicators, values, names } = radarMetrics.value
-		return buildRadarChartOption({
+		return buildRadarChartOption(builderCtx, {
 			indicators,
 			values,
 			names,

@@ -1,5 +1,5 @@
 import type { TradeType } from '~/schema/trade'
-import { OPERATOR_EQUAL } from '~/utils'
+import { OPERATOR_EQUAL } from '~/utils/filter-utils'
 import { transformAdvancedFilters } from '~/utils/filter-utils'
 
 export const useTradeTableFilters = () => {

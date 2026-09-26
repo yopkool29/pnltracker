@@ -1,6 +1,6 @@
 import type { ChartKey } from '~/type'
 
-export interface ChartRegistration {
+interface ChartRegistration {
 	id: ChartKey
 	category: 'main' | 'time'
 	defaultVisible: boolean
@@ -17,7 +17,6 @@ const chartRegistry: ChartRegistration[] = [
 	{ id: 'cumulatedPnl', category: 'main', defaultVisible: true },
 	{ id: 'appt', category: 'main', defaultVisible: true },
 	{ id: 'winrate', category: 'main', defaultVisible: true },
-	{ id: 'hourlyHeatmap', category: 'time', defaultVisible: false },
 ]
 
 export const useMetricsChartRegistry = () => {

@@ -1,4 +1,4 @@
-import { getDetailedError } from '~/utils';
+import { getDetailedError } from '~/utils/errorHelpers'
 import type { ErrorMessage } from '~/type'
 import { type UserType, defaultSettings } from '~/schema/user'
 

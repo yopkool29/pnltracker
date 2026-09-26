@@ -1,7 +1,7 @@
 import type { H3Event, EventHandlerRequest } from 'h3'
 import type { PrismaClient as DataPrismaClient } from '~/generated/prisma-data'
 import { getDataDb } from '../db'
-import { symbolPricePerPoint } from '~/utils'
+import { symbolPricePerPoint } from '~/utils/symbolPrice'
 import { toUTCMidnight } from '~/utils/date-utils'
 import { generateUniqueId, CreateTradeSchema } from '~/schema/trade'
 import type { InstrumentType } from '~/type'

@@ -1,5 +1,4 @@
-import { formatCurrency as formatCurrencyUtil } from '~/utils'
-
+import { formatCurrency as formatCurrencyUtil } from '~/utils/format'
 export const useUtils = () => {
     const formatCurrency = (value: number | string, decimals: number = 2): string => {
         return formatCurrencyUtil(value, decimals, 'USD')

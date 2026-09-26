@@ -1,5 +1,5 @@
 import type { TradeFilter } from '~/type'
-import { metadataHelpers } from '~/utils'
+import { metadataHelpers } from '~/utils/metadataHelpers'
 import { buildFiltersForApi } from '~/composables/data/useDashboard'
 import type { SettingsContentType } from '~/schema/user'
 

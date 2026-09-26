@@ -1,5 +1,5 @@
 import type { TradeExtendedType } from '~/schema/trade'
-import { round as _round } from '~/utils'
+import { round as _round } from '~/utils/format'
 import {
     getAPPT,
     getAvgTradeDuration,
@@ -34,13 +34,13 @@ import {
     type RMultipleTrade,
 } from '~/utils/rMultiple'
 
-export type TradePerformanceOptions = {
+type TradePerformanceOptions = {
     useNet: boolean
     round: number
     pnlRound: number
 }
 
-export type RPerformance = {
+type RPerformance = {
     coverage: number
     reliability: RMultipleReliability
     tradesWithStopLoss: number

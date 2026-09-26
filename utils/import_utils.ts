@@ -1,4 +1,4 @@
-export const providerLabels: Record<string, string> = {
+const providerLabels: Record<string, string> = {
     'mt5': 'MetaTrader 5 (XLSX)',
     'nt8': 'NinjaTrader (CSV)',
     'quantower': 'Quantower',
@@ -7,7 +7,7 @@ export const providerLabels: Record<string, string> = {
     'standard': 'Standard CSV Format',
 }
 
-export const providerIcons: Record<string, string> = {
+const providerIcons: Record<string, string> = {
     'mt5': 'i-lucide-file-spreadsheet',
     'nt8': 'i-lucide-file-spreadsheet',
     'quantower': 'i-lucide-file-spreadsheet',
@@ -18,7 +18,7 @@ export const providerIcons: Record<string, string> = {
 
 export const getProviderLabel = (provider: string) => providerLabels[provider] || provider
 
-export const getProviderIcon = (provider: string) => providerIcons[provider] || 'i-lucide-file'
+const getProviderIcon = (provider: string) => providerIcons[provider] || 'i-lucide-file'
 
 // Fonction qui prend en compte les métadonnées pour afficher l'icône cloud si nécessaire
 export const getProviderIconWithMetadata = (provider: string, metadata?: { useCloudStorage?: boolean } | null) => {

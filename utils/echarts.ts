@@ -14,14 +14,14 @@ export type EChartsGridOption = {
     bottom?: number
 }
 
-export type EChartsItemStyle = {
+type EChartsItemStyle = {
     color?: string
     borderRadius?: number | number[]
     borderColor?: string
     borderWidth?: number
 }
 
-export type EChartsLineStyle = {
+type EChartsLineStyle = {
     width?: number
     color?: string
     type?: 'solid' | 'dashed' | 'dotted'
@@ -33,11 +33,6 @@ export type EChartsAreaStyle = {
     origin?: number | 'start' | 'end' | 'auto'
 }
 
-export type EChartsSeriesEmphasis = {
-    disabled?: boolean
-    itemStyle?: EChartsItemStyle
-}
-
 export type EChartsFormatterParams<V = number> = {
     seriesName?: string
     name?: string
@@ -47,7 +42,7 @@ export type EChartsFormatterParams<V = number> = {
     data: unknown
 }
 
-export interface BarDataItem {
+interface BarDataItem {
     value: number
     itemStyle?: {
         color?: string
@@ -55,7 +50,7 @@ export interface BarDataItem {
     }
 }
 
-export interface BarSeriesConfig {
+interface BarSeriesConfig {
     data: BarDataItem[]
     barMaxWidth?: number
     barMinHeight?: number
@@ -70,7 +65,7 @@ export interface BarSeriesConfig {
     }
 }
 
-export interface LineSeriesConfig {
+interface LineSeriesConfig {
     name: string
     data: (number | null)[]
     color: string
@@ -83,7 +78,7 @@ export interface LineSeriesConfig {
     connectNulls?: boolean
 }
 
-export type ScatterDataPoint = {
+type ScatterDataPoint = {
     value: number[]
     itemStyle?: {
         color?: string
@@ -93,7 +88,7 @@ export type ScatterDataPoint = {
     }
 }
 
-export interface ScatterSeriesConfig {
+interface ScatterSeriesConfig {
     data: ScatterDataPoint[]
     symbolSize?: number | ((data: unknown[]) => number)
 
@@ -230,10 +225,9 @@ export const getEchartsCenterTextGraphic = (
     },
 })
 
-
 // --- Chart colors ---
 
-export type MetricCategory = 'monetary' | 'percent' | 'raw'
+type MetricCategory = 'monetary' | 'percent' | 'raw'
 
 const monetaryMetrics: BreakdownMetric[] = [
     'pnl',
@@ -247,7 +241,7 @@ const monetaryMetrics: BreakdownMetric[] = [
 
 const percentMetrics: BreakdownMetric[] = ['winrate']
 
-export const getMetricCategory = (metric: BreakdownMetric): MetricCategory => {
+const getMetricCategory = (metric: BreakdownMetric): MetricCategory => {
     if (monetaryMetrics.includes(metric)) return 'monetary'
     if (percentMetrics.includes(metric)) return 'percent'
     return 'raw'
@@ -261,54 +255,6 @@ export const chartColors = {
     loss: '#dc2626',
     neutral: '#9ca3af',
 } as const
-
-export const hslColorForValue = (
-    val: number,
-    min: number,
-    max: number,
-    saturation = 45,
-    lightness = 55
-): string => {
-    const range = max - min
-    if (range <= 0) return `hsl(60, ${saturation}%, ${lightness}%)`
-    const normalized = Math.max(0, Math.min(1, (val - min) / range))
-    const hue = normalized * 120
-    return `hsl(${hue}, ${saturation}%, ${lightness}%)`
-}
-
-export const monetaryColorForValue = (
-    val: number,
-    saturation = 45,
-    lightness = 55
-): string => {
-    let hue: number
-    if (val <= -3) {
-        hue = 0
-    } else if (val <= 0) {
-        hue = ((val + 3) / 3) * 30
-    } else if (val <= 3) {
-        hue = 30 + (val / 3) * 90
-    } else {
-        hue = 120
-    }
-    return `hsl(${hue}, ${saturation}%, ${lightness}%)`
-}
-
-export const winrateColor = (
-    wr: number,
-    saturation = 45,
-    lightness = 55
-): string => {
-    let hue: number
-    if (wr <= 25) {
-        hue = 0
-    } else if (wr <= 60) {
-        hue = ((wr - 25) / 35) * 30
-    } else {
-        hue = 30 + ((wr - 60) / 40) * 90
-    }
-    return `hsl(${hue}, ${saturation}%, ${lightness}%)`
-}
 
 export const profitFactorColor = (
     pf: number,
@@ -326,7 +272,6 @@ export const profitFactorColor = (
     }
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`
 }
-
 
 // --- Axis scale ---
 
@@ -380,14 +325,6 @@ export const scaleValue = (
     if (val > axisMax) return axisMax
     if (val < axisMin) return axisMin
     return val
-}
-
-export const inverseScaleValue = (
-    pos: number,
-    _bounds: AxisBounds,
-    _useLog: boolean
-): number => {
-    return pos
 }
 
 export const makeAxisLabel =

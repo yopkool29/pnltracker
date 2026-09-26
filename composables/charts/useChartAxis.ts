@@ -4,14 +4,14 @@ import { computeAxisBounds, scaleValue, makeAxisLabel } from '~/utils/echarts'
 import type { AxisBounds } from '~/utils/echarts'
 import { formatMetricValueForMetric } from '~/composables/analytics/breakdownMetrics'
 
-export interface AxisConfig {
+interface AxisConfig {
 	bounds: AxisBounds
 	min: number
 	max: number
 	formatter: (v: number) => string
 }
 
-export interface DataZoomConfig {
+interface DataZoomConfig {
 	hasZoom: boolean
 	zoomEnd: number
 	sliders: NonNullable<EChartsOption['dataZoom']>

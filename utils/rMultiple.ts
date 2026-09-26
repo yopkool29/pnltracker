@@ -1,5 +1,4 @@
-import { round as _round } from '~/utils'
-
+import { round as _round } from '~/utils/format'
 // Calcule le ratio risque/rendement depuis le TP/SL
 export const calculateRiskReward = (
     type: 'buy' | 'sell',

@@ -1,4 +1,4 @@
-export const applyROT13 = (text: string): string => {
+const applyROT13 = (text: string): string => {
   return text.replace(/[a-zA-Z]/g, (char) => {
     const code = char.charCodeAt(0)
     const base = code < 97 ? 65 : 97 // A=65, a=97
@@ -37,13 +37,13 @@ const base64ToBytes = (text: string): number[] | null => {
   }
 }
 
-export const decodeBase64 = (text: string): string | null => {
+const decodeBase64 = (text: string): string | null => {
   const bytes = base64ToBytes(text)
   if (!bytes) return null
   return new TextDecoder('utf-8').decode(new Uint8Array(bytes))
 }
 
-export const decryptXOR = (base64String: string, password: string): string | null => {
+const decryptXOR = (base64String: string, password: string): string | null => {
   try {
     if (!password) return null
     
@@ -108,24 +108,4 @@ export const decryptData = (encryptedData: string, password: string): string | n
     console.error('Decryption failed:', e)
     return null
   }
-}
-
-export const decryptCSV = (encryptedData: string, password: string): Record<string, string>[] | null => {
-  const csvText = decryptData(encryptedData, password)
-  if (!csvText) return null
-  
-  const lines = csvText.trim().split('\n')
-  if (lines.length < 2) return null
-  
-  const headers = lines[0].split(',')
-  const rows = lines.slice(1).map(line => {
-    const values = line.split(',')
-    const obj: Record<string, string> = {}
-    headers.forEach((h, i) => {
-      obj[h] = values[i] || ''
-    })
-    return obj
-  })
-  
-  return rows
 }

@@ -5,7 +5,7 @@ import { TagSchema } from '~/schema/tag'
 import type { TagGroupType, CreateTagGroupType, UpdateTagGroupType } from '~/schema/tagGroup'
 import type { CreateTagType, UpdateTagType } from '~/schema/tag'
 
-export interface TagStyle {
+interface TagStyle {
     backgroundColor: string;
     color?: string;
 }

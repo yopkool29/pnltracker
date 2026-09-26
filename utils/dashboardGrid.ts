@@ -1,4 +1,3 @@
-import { isBreakdownKey } from '~/type'
 
 // --- Grid layout ---
 
@@ -85,10 +84,6 @@ export const defaultDashboardGridLayoutSm = compactItems(defaultGridItemsSm, 3)
 // Items that can be resized in the grid layout
 // Les items breakdown sont resizable — on détecte par préfixe au runtime
 // (les clés sont dynamiques : breakdownBar_abc_123...)
-export const isResizableItem = (itemId: string): boolean => {
-    if (resizableGridItems.includes(itemId)) return true
-    return isBreakdownKey(itemId)
-}
 
 export const resizableGridItems = [
     'metricsCards',

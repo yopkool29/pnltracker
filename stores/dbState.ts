@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import type { Ref } from 'vue'
 
 import type {
 	TradeFilter,
@@ -28,6 +29,24 @@ export const useDbStateStore = defineStore(
 		const { currentDatabase } = useDatabase()
 		const getCurrentDbName = () => currentDatabase.value?.name || 'default'
 
+		// Valeur par DB : fallback calculé en lecture, sans write-back
+		const perDbValue = <T>(storage: Ref<Record<string, T>>, fallback: (stored: T | undefined) => T) =>
+			computed<T>({
+				get: () => fallback(storage.value[getCurrentDbName()]),
+				set: (val) => { storage.value[getCurrentDbName()] = val },
+			})
+
+		// Valeur par DB : initialisée et persistée au premier accès
+		const perDbInit = <T>(storage: Ref<Record<string, T>>, init: () => T) =>
+			computed<T>({
+				get: () => {
+					const dbName = getCurrentDbName()
+					if (!storage.value[dbName]) storage.value[dbName] = init()
+					return storage.value[dbName]
+				},
+				set: (val) => { storage.value[getCurrentDbName()] = val },
+			})
+
 		// --- DB-specific state (internal storage per database) ---
 		const customInputsPerDb = ref<Record<string, CustomInputs>>({})
 		const recentColorsPerDb = ref<Record<string, string[]>>({})
@@ -46,30 +65,9 @@ export const useDbStateStore = defineStore(
 		const tradeChartRthPerDb = ref<Record<string, Record<string, boolean>>>({})
 		const chartSettingsPerDb = ref<Record<string, Record<string, Record<string, unknown>>>>({})
 
-		const lastViewedNoteId = computed({
-			get: () => {
-				const dbName = getCurrentDbName()
-				return lastViewedNoteIdPerDb.value[dbName] ?? null
-			},
-			set: (val) => {
-				const dbName = getCurrentDbName()
-				lastViewedNoteIdPerDb.value[dbName] = val
-			},
-		})
+		const lastViewedNoteId = perDbValue(lastViewedNoteIdPerDb, s => s ?? null)
 
-		const customInputs = computed({
-			get: () => {
-				const dbName = getCurrentDbName()
-				if (!customInputsPerDb.value[dbName]) {
-					customInputsPerDb.value[dbName] = {}
-				}
-				return customInputsPerDb.value[dbName]
-			},
-			set: (val) => {
-				const dbName = getCurrentDbName()
-				customInputsPerDb.value[dbName] = val
-			},
-		})
+		const customInputs = perDbInit(customInputsPerDb, () => ({}))
 
 		const getCustomInput = (name: string) =>
 			customInputs.value[name] || { items: [], value: '' }
@@ -123,33 +121,9 @@ export const useDbStateStore = defineStore(
 			return null
 		}
 
-		const recentColors = computed({
-			get: () => {
-				const dbName = getCurrentDbName()
-				if (!recentColorsPerDb.value[dbName]) {
-					recentColorsPerDb.value[dbName] = []
-				}
-				return recentColorsPerDb.value[dbName]
-			},
-			set: (val) => {
-				const dbName = getCurrentDbName()
-				recentColorsPerDb.value[dbName] = val
-			},
-		})
+		const recentColors = perDbInit(recentColorsPerDb, () => [])
 
-		const recentColors2 = computed({
-			get: () => {
-				const dbName = getCurrentDbName()
-				if (!recentColors2PerDb.value[dbName]) {
-					recentColors2PerDb.value[dbName] = []
-				}
-				return recentColors2PerDb.value[dbName]
-			},
-			set: (val) => {
-				const dbName = getCurrentDbName()
-				recentColors2PerDb.value[dbName] = val
-			},
-		})
+		const recentColors2 = perDbInit(recentColors2PerDb, () => [])
 
 		const tradeOptions = computed({
 			get: () => {
@@ -317,88 +291,19 @@ export const useDbStateStore = defineStore(
 			},
 		})
 
-		const dashBoardResult = computed({
-			get: () => {
-				const dbName = getCurrentDbName()
-				if (!dashBoardResultPerDb.value[dbName]) {
-					dashBoardResultPerDb.value[dbName] = { ...defaultDashBoardResult }
-				}
-				return dashBoardResultPerDb.value[dbName]
-			},
-			set: (val) => {
-				const dbName = getCurrentDbName()
-				dashBoardResultPerDb.value[dbName] = val
-			},
-		})
+		const dashBoardResult = perDbInit(dashBoardResultPerDb, () => ({ ...defaultDashBoardResult }))
 
-		const columnVisibility = computed({
-			get: () => {
-				const dbName = getCurrentDbName()
-				return {
-					...defaultColumnVisibility,
-					...(columnVisibilityPerDb.value[dbName] || {}),
-				}
-			},
-			set: (val) => {
-				const dbName = getCurrentDbName()
-				columnVisibilityPerDb.value[dbName] = val
-			},
-		})
+		const columnVisibility = perDbValue(columnVisibilityPerDb, s => ({ ...defaultColumnVisibility, ...(s || {}) }))
 
-		const showDetailedNote = computed({
-			get: () => {
-				const dbName = getCurrentDbName()
-				return showDetailedNotePerDb.value[dbName] ?? true
-			},
-			set: (val) => {
-				const dbName = getCurrentDbName()
-				showDetailedNotePerDb.value[dbName] = val
-			},
-		})
+		const showDetailedNote = perDbValue(showDetailedNotePerDb, s => s ?? true)
 
-		const tradeChartTf = computed({
-			get: () => {
-				const dbName = getCurrentDbName()
-				return tradeChartTfPerDb.value[dbName] ?? '15'
-			},
-			set: (val) => {
-				const dbName = getCurrentDbName()
-				tradeChartTfPerDb.value[dbName] = val
-			},
-		})
+		const tradeChartTf = perDbValue(tradeChartTfPerDb, s => s ?? '15')
 
-		const tradeChartShowAdjacent = computed({
-			get: () => {
-				const dbName = getCurrentDbName()
-				return tradeChartShowAdjacentPerDb.value[dbName] ?? true
-			},
-			set: (val) => {
-				const dbName = getCurrentDbName()
-				tradeChartShowAdjacentPerDb.value[dbName] = val
-			},
-		})
+		const tradeChartShowAdjacent = perDbValue(tradeChartShowAdjacentPerDb, s => s ?? true)
 
-		const tradeChartShowAdjacentLines = computed({
-			get: () => {
-				const dbName = getCurrentDbName()
-				return tradeChartShowAdjacentLinesPerDb.value[dbName] ?? true
-			},
-			set: (val) => {
-				const dbName = getCurrentDbName()
-				tradeChartShowAdjacentLinesPerDb.value[dbName] = val
-			},
-		})
+		const tradeChartShowAdjacentLines = perDbValue(tradeChartShowAdjacentLinesPerDb, s => s ?? true)
 
-		const tradeChartRth = computed({
-			get: () => {
-				const dbName = getCurrentDbName()
-				return tradeChartRthPerDb.value[dbName] ?? {}
-			},
-			set: (val) => {
-				const dbName = getCurrentDbName()
-				tradeChartRthPerDb.value[dbName] = val
-			},
-		})
+		const tradeChartRth = perDbValue(tradeChartRthPerDb, s => s ?? {})
 
 		// Get/set RTH preference per instrument type within the current DB.
 		const getTradeChartRth = (instrumentType: string): boolean => {
@@ -414,19 +319,7 @@ export const useDbStateStore = defineStore(
 			tradeChartRthPerDb.value[dbName][instrumentType] = val
 		}
 
-		const chartSettings = computed({
-			get: () => {
-				const dbName = getCurrentDbName()
-				if (!chartSettingsPerDb.value[dbName]) {
-					chartSettingsPerDb.value[dbName] = {}
-				}
-				return chartSettingsPerDb.value[dbName]
-			},
-			set: (val) => {
-				const dbName = getCurrentDbName()
-				chartSettingsPerDb.value[dbName] = val
-			},
-		})
+		const chartSettings = perDbInit(chartSettingsPerDb, () => ({}))
 
 		const setLastViewedNoteId = (id: number | null) => {
 			lastViewedNoteId.value = id

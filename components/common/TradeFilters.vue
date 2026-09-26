@@ -82,13 +82,7 @@
 <script setup lang="ts">
 import type { TradeFilter, FilterColumn } from '~/type'
 import type { TagGroupType } from '~/schema/tagGroup'
-import {
-	OPERATOR_EQUAL,
-	OPERATOR_NOT_EQUAL,
-	OPERATOR_GREATER_THAN_OR_EQUAL,
-	OPERATOR_IN,
-} from '~/utils'
-
+import { OPERATOR_EQUAL, OPERATOR_NOT_EQUAL, OPERATOR_GREATER_THAN_OR_EQUAL, OPERATOR_IN } from '~/utils/filter-utils'
 const { t } = useI18n()
 
 const props = defineProps<{

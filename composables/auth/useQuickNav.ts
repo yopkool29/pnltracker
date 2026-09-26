@@ -1,6 +1,6 @@
 import { useMediaQuery } from '@vueuse/core'
 
-export interface QuickNavItem {
+interface QuickNavItem {
     path: string
     label: string
     icon: string

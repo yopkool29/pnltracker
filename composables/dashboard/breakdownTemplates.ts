@@ -84,22 +84,8 @@ export const tradeTooltipOptions: { value: TradeTooltipField; labelKey: string }
 	{ value: 'duration', labelKey: 'components.dashboard.breakdown.trade_property.duration' },
 ]
 
-// Types de breakdown disponibles dans le menu visibilité (avec bouton "créer")
-export const breakdownTypes: { baseKey: BreakdownBaseKey; labelKey: string }[] = [
-	{ baseKey: 'breakdownBar', labelKey: 'components.dashboard.charts.breakdown_bar' },
-	{ baseKey: 'breakdownBarVertical', labelKey: 'components.dashboard.charts.breakdown_bar_vertical' },
-	{ baseKey: 'breakdownScatter', labelKey: 'components.dashboard.charts.breakdown_scatter' },
-	{ baseKey: 'breakdownScatter2D', labelKey: 'components.dashboard.charts.breakdown_scatter_2d' },
-	{ baseKey: 'breakdownTable', labelKey: 'components.dashboard.charts.breakdown_table' },
-	{ baseKey: 'breakdownCalendar', labelKey: 'components.dashboard.charts.breakdown_calendar' },
-	// breakdownBoxplot désactivé temporairement
-	// { baseKey: 'breakdownBoxplot', labelKey: 'components.dashboard.charts.breakdown_boxplot' },
-	// breakdownRadar désactivé temporairement
-	// { baseKey: 'breakdownRadar', labelKey: 'components.dashboard.charts.breakdown_radar' },
-]
-
 // Templates prêts à l'emploi (raccourcis pour créer un chart pré-configuré)
-export const chartTemplates: ChartTemplate[] = [
+const chartTemplates: ChartTemplate[] = [
 	// --- Répartition : Barres ---
 	{ id: 'pnlByDayOfWeek', labelKey: 'components.dashboard.templates.pnl_by_day_of_week', category: 'breakdown', subcategory: 'bars', baseKey: 'breakdownBarVertical', config: { dimension: 'dayOfWeekOpen', metric: 'pnl', chartType: 'barVertical' } },
 	{ id: 'winrateByHour', labelKey: 'components.dashboard.templates.winrate_by_hour', category: 'breakdown', subcategory: 'bars', baseKey: 'breakdownBarVertical', config: { dimension: 'hourStart', metric: 'winrate', chartType: 'barVertical' } },

@@ -1,11 +1,10 @@
 import type { TradeExtendedType } from '~/schema/trade'
 import type { SettingsContentType } from '~/schema/user'
 import { groupTradesByPeriod } from '~/utils/dashboardPeriods'
-import { round as _round } from '~/utils'
-
+import { round as _round } from '~/utils/format'
 // --- Statistiques journalières ---
 
-export type DailyPnl = {
+type DailyPnl = {
     date: string
     pnl: number
 }

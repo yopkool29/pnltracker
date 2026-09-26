@@ -20,8 +20,7 @@
 
 <script setup lang="ts">
 import type { ILogView } from '~/type'
-import { safeTagsReplace } from '~/utils'
-
+import { safeTagsReplace } from '~/utils/tagHelpers'
 let level = 3
 
 const message = ref('')

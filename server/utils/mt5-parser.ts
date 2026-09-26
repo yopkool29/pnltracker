@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import type { AccountInfoImport, AccountTrades, TradesImport } from '.';
-import { round } from "~/utils";
+import { round } from '~/utils/format'
 import type { ImportMode } from '~/utils/date-utils';
 import { parseMT5Date } from '~/utils/date-utils';
 

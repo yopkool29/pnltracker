@@ -103,7 +103,7 @@
 
 <script setup lang="ts">
 import { useSharedScreenshots, type ScreenshotItem } from '~/composables/notes/useSharedScreenshots'
-import { getImagePath } from '~/utils'
+import { getImagePath } from '~/utils/imagePath'
 import { useI18n } from '#imports'
 
 const { t } = useI18n()

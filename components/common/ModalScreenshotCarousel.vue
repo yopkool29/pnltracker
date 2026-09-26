@@ -30,8 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { getImagePath } from '~/utils'
-
+import { getImagePath } from '~/utils/imagePath'
 const userStore = useUserStore()
 const { currentDatabase } = useDatabase()
 const carouselRef = ref()

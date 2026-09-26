@@ -1,3 +1,11 @@
+export const OPERATOR_EQUAL = '='
+export const OPERATOR_NOT_EQUAL = '!='
+export const OPERATOR_GREATER_THAN = '>'
+export const OPERATOR_GREATER_THAN_OR_EQUAL = '>='
+export const OPERATOR_LESS_THAN = '<'
+export const OPERATOR_LESS_THAN_OR_EQUAL = '<='
+export const OPERATOR_IN = 'in'
+
 import type { TradeFilter } from '~/type'
 import { parseDateStringToTimestamp } from '~/utils/date-utils'
 
