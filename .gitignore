@@ -65,3 +65,4 @@ src-tauri/gen/
 # Vendored binaries (PostgreSQL, etc.)
 vendor/
 docs/dev/BUILD_RELEASE.md
+docker-compose.override.yml
