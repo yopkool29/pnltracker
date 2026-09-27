@@ -1,13 +1,11 @@
 import { getHeader, toWebRequest } from 'h3'
 import { getAuthDb } from '~/server/utils/db'
-import { createAppError } from '../utils/errors'
 import { handleMcpHttpRequest } from '../utils/mcpHttp'
 
-const unauthorized = () => createAppError({
-	statusCode: 401,
-	tag: 'api.auth.verify.unauthorized',
-	message: 'Unauthorized',
-})
+const unauthorized = () => new Response(
+	JSON.stringify({ tag: 'api.auth.verify.unauthorized', message: 'Unauthorized' }),
+	{ status: 401, headers: { 'content-type': 'application/json' } },
+)
 
 // Endpoint MCP streamable-http servi directement par Nitro (process #254).
 // Auth : Authorization: Bearer <token> (ou x-api-token) validé contre User.token,
@@ -17,13 +15,13 @@ export default defineEventHandler(async (event) => {
 	const token = authorization?.startsWith('Bearer ')
 		? authorization.slice('Bearer '.length).trim()
 		: getHeader(event, 'x-api-token')
-	if (!token) throw unauthorized()
+	if (!token) return unauthorized()
 
 	const user = await getAuthDb().user.findUnique({
 		where: { token },
 		select: { id: true },
 	})
-	if (!user) throw unauthorized()
+	if (!user) return unauthorized()
 
 	return handleMcpHttpRequest(toWebRequest(event), {
 		token,
