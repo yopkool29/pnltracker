@@ -300,7 +300,7 @@
                             <p class="text-sm text-secondary">{{ $t('components.settings.options.mcp_desc') }}</p>
                             <UFormField :label="$t('components.settings.options.mcp_port')" class="w-lg">
                                 <CommonCopyableInput
-                                    :model-value="mcpInfo.apiUrl"
+                                    :model-value="mcpInfo.mcpUrl"
                                     readonly
                                     input-class="font-mono"
                                 />
@@ -533,7 +533,7 @@ const { updateSettings } = useAuth()
 const userStore = useUserStore()
 
 type McpInfo = {
-	apiUrl: string
+	mcpUrl: string
 	token: string
 	instructions: string
 }

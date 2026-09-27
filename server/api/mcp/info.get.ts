@@ -17,11 +17,11 @@ export default defineEventHandler(async (event) => {
 		select: { token: true },
 	})
 
-	const port = getRequestURL(event).port
+	const requestUrl = getRequestURL(event)
 
 	return {
-		apiUrl: `http://127.0.0.1:${port}`,
+		mcpUrl: `${requestUrl.origin}/mcp`,
 		token: user?.token || '',
-		instructions: 'Configurez votre MCP avec PNLTRACKER_API_URL et PNLTRACKER_MCP_TOKEN',
+		instructions: 'Configurez votre client MCP avec cette URL et le token en en-tête Authorization: Bearer',
 	}
 })

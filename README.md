@@ -140,16 +140,22 @@ This opens PnlTracker in a Tauri WebView while keeping the site available on por
 
 ### Local MCP server
 
-The read-only MCP server lets compatible assistants query PnlTracker through its HTTP API. PnlTracker and PostgreSQL must already be running.
+The application serves a streamable-HTTP MCP endpoint directly at `/mcp` (no separate process needed). PnlTracker and PostgreSQL must already be running.
 
-Set these values in `.env` (copy them from **Settings → Options → MCP** in the app):
+Copy the URL and token from **Settings → Options → MCP** in the app, then configure your MCP client:
 
-```bash
-PNLTRACKER_API_URL=http://127.0.0.1:3001
-PNLTRACKER_MCP_TOKEN=your-user-api-token
+```json
+{
+	"mcpServers": {
+		"pnltracker": {
+			"url": "http://127.0.0.1:3003/mcp",
+			"headers": { "Authorization": "Bearer <your-user-api-token>" }
+		}
+	}
+}
 ```
 
-The token must match the PnlTracker user's API token. For the initial administrator, it matches `ADMIN_API_TOKEN`. Start the server manually with `npm mcp`, or use the project configuration in `.devin/mcp_config.json` from a compatible MCP client.
+The token is the PnlTracker user's API token (for the initial administrator, it matches `ADMIN_API_TOKEN`).
 
 The MCP exposes databases, accounts, tags, global daily notes, active closed trades and aggregated performance. Trade details include allowlisted risk/reward, option metadata and detailed notes. It cannot modify data and does not expose screenshots, arbitrary metadata or open positions.
 

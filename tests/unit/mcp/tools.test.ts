@@ -1,23 +1,15 @@
-import { createServer, type Server } from 'node:http'
-import type { AddressInfo } from 'node:net'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { PnlTrackerApiClient } from '~/mcp/apiClient'
-import { registerTools } from '~/mcp/tools'
+import { PnlTrackerApiError } from '~/mcp/errors'
+import { registerTools, type McpApiClient, type McpApiWriteOptions } from '~/mcp/tools'
 
-let httpServer: Server
 let mcpServer: McpServer
 let client: Client
-let apiUrl: string
 let journalRequestCount = 0
 let journalRequestBody: unknown
-
-const respond = (response: import('node:http').ServerResponse, value: unknown) => {
-	response.writeHead(200, { 'content-type': 'application/json' })
-	response.end(JSON.stringify(value))
-}
+let factoryToken: string | undefined
 
 const tradeResponse = {
 	id: 7,
@@ -42,63 +34,53 @@ const tradeResponse = {
 	screenshots: [{ url: '/private.png' }],
 }
 
+// Fake client McpApiClient : reproduit le routage de l'ancien serveur HTTP factice
+// et vérifie que database_id est bien propagé (ex-x-database-id).
+const createFakeApiClient = (): McpApiClient => ({
+	async get(path, options) {
+		if (path === '/api/database/list') {
+			return [{ id: 1, name: 'main', displayName: 'Main', isDefault: true, schemaName: 'private' }]
+		}
+		expect(options.databaseId).toBe(1)
+		if (path === '/api/notes') {
+			return [{
+				id: 12,
+				date: '2026-08-10T08:00:00.000Z',
+				updatedAt: '2026-08-10T09:00:00.000Z',
+				content: 'Daily market review',
+				metadata: { subtitle: 'Morning plan', privateKey: 'must not leak' },
+			}]
+		}
+		if (path === '/api/trades') return [tradeResponse]
+		if (path === '/api/trades/7') return tradeResponse
+		throw new PnlTrackerApiError('The requested PnlTracker resource was not found', 404)
+	},
+	async post(path, options: McpApiWriteOptions) {
+		expect(options.databaseId).toBe(1)
+		if (path === '/api/mcp/ai-journal') {
+			journalRequestCount++
+			journalRequestBody = options.body
+			return { success: true, note: { id: 80, date: '1980-01-01T00:00:00.000Z', updatedAt: '2026-08-30T12:00:00.000Z' } }
+		}
+		throw new PnlTrackerApiError('The requested PnlTracker resource was not found', 404)
+	},
+	async delete(path, options) {
+		expect(options.databaseId).toBe(1)
+		if (path === '/api/mcp/ai-journal') return { success: true, deleted: 1 }
+		throw new PnlTrackerApiError('The requested PnlTracker resource was not found', 404)
+	},
+	async getBinary() {
+		throw new PnlTrackerApiError('The requested PnlTracker resource was not found', 404)
+	},
+})
+
 describe('PnlTracker MCP tools', () => {
 	beforeAll(async () => {
-		httpServer = createServer((request, response) => {
-			expect(request.headers['x-api-token']).toBe('test-token')
-			if (request.url === '/api/mcp/ai-journal' && request.method === 'POST') {
-				expect(request.headers['x-database-id']).toBe('1')
-				expect(request.headers['content-type']).toBe('application/json')
-				const chunks: Buffer[] = []
-				request.on('data', chunk => chunks.push(Buffer.from(chunk)))
-				request.on('end', () => {
-					journalRequestCount++
-					journalRequestBody = JSON.parse(Buffer.concat(chunks).toString('utf8')) as unknown
-					respond(response, {
-						success: true,
-						note: { id: 80, date: '1980-01-01T00:00:00.000Z', updatedAt: '2026-08-30T12:00:00.000Z' },
-					})
-				})
-				return
-			}
-			if (request.url === '/api/database/list') {
-				respond(response, [{ id: 1, name: 'main', displayName: 'Main', isDefault: true, schemaName: 'private' }])
-				return
-			}
-			if (request.url?.startsWith('/api/notes?')) {
-				expect(request.headers['x-database-id']).toBe('1')
-				respond(response, [{
-					id: 12,
-					date: '2026-08-10T08:00:00.000Z',
-					updatedAt: '2026-08-10T09:00:00.000Z',
-					content: 'Daily market review',
-					metadata: { subtitle: 'Morning plan', privateKey: 'must not leak' },
-				}])
-				return
-			}
-			if (request.url?.startsWith('/api/trades?')) {
-				expect(request.headers['x-database-id']).toBe('1')
-				respond(response, [tradeResponse])
-				return
-			}
-			if (request.url === '/api/trades/7') {
-				expect(request.headers['x-database-id']).toBe('1')
-				respond(response, tradeResponse)
-				return
-			}
-			response.writeHead(404, { 'content-type': 'application/json' })
-			response.end('{}')
-		})
-		await new Promise<void>(resolve => httpServer.listen(0, '127.0.0.1', resolve))
-		apiUrl = `http://127.0.0.1:${(httpServer.address() as AddressInfo).port}`
-
 		mcpServer = new McpServer({ name: 'test-pnltracker', version: '1.0.0' })
-		registerTools(mcpServer, new PnlTrackerApiClient({
-			apiUrl,
-			apiToken: 'test-token',
-			requestTimeoutMs: 1000,
-			maxResponseBytes: 1024 * 1024,
-		}))
+		registerTools(mcpServer, (token) => {
+			factoryToken = token
+			return createFakeApiClient()
+		})
 		client = new Client({ name: 'test-client', version: '1.0.0' })
 		const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair()
 		await Promise.all([mcpServer.connect(serverTransport), client.connect(clientTransport)])
@@ -107,7 +89,6 @@ describe('PnlTracker MCP tools', () => {
 	afterAll(async () => {
 		await client.close()
 		await mcpServer.close()
-		await new Promise<void>((resolve, reject) => httpServer.close(error => error ? reject(error) : resolve()))
 	})
 
 	it('advertises read tools and explicit AI journal controls', async () => {
@@ -155,6 +136,8 @@ describe('PnlTracker MCP tools', () => {
 		expect(JSON.stringify(saved)).toContain('"note_id":80')
 		expect(journalRequestCount).toBe(1)
 		expect(journalRequestBody).toEqual({ title: 'NZDCAD review', content: '## Setup\n\nValid rejection.' })
+		// Le transport InMemory ne fournit pas d'authInfo → token vide
+		expect(factoryToken).toBe('')
 	})
 
 	it('allowlists metadata and only includes detailed notes in get_trade', async () => {

@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { TradeFilter } from '~/schema/tradeFilter'
 import { z } from 'zod'
-import { PnlTrackerApiError, type PnlTrackerApiClient } from './apiClient'
+import { PnlTrackerApiError } from './errors'
 import {
 	AnalyticsBreakdownResponseSchema,
 	AnalyticsInputSchema,
@@ -24,6 +24,26 @@ import {
 } from './schemas'
 
 type JsonRecord = Record<string, unknown>
+
+type QueryValue = string | number | boolean | undefined
+
+export type McpApiRequestOptions = {
+	databaseId: number | undefined
+	query: Record<string, QueryValue>
+}
+
+export type McpApiWriteOptions = McpApiRequestOptions & {
+	body: unknown
+}
+
+export interface McpApiClient {
+	get(path: string, options: McpApiRequestOptions): Promise<unknown>
+	post(path: string, options: McpApiWriteOptions): Promise<unknown>
+	delete(path: string, options: McpApiRequestOptions): Promise<unknown>
+	getBinary(path: string, options: McpApiRequestOptions): Promise<{ buffer: Buffer, mimeType: string }>
+}
+
+export type McpApiClientFactory = (token: string) => McpApiClient
 
 const toolAnnotations = {
 	readOnlyHint: true,
@@ -181,9 +201,12 @@ const withErrorBoundary = async (callback: () => Promise<unknown>) => {
 	}
 }
 
-export const registerTools = (server: McpServer, api: PnlTrackerApiClient) => {
-	let aiJournalEnabled = true
+// État partagé au niveau module : en mode HTTP stateless chaque requête crée
+// un nouveau serveur MCP, le flag doit donc survivre entre les requêtes et les
+// reconnexions clients (process #254). En stdio, un process = une instance.
+let aiJournalEnabled = true
 
+export const registerTools = (server: McpServer, createApi: McpApiClientFactory) => {
 	server.registerTool('get_ai_journal_status', {
 		description: 'Check if AI analysis journaling is enabled. Call this first if you are unsure whether to append results to the journal. Returns { enabled: boolean }. Enabled by default after every MCP restart.',
 		inputSchema: z.object({}).strict(),
@@ -203,9 +226,10 @@ export const registerTools = (server: McpServer, api: PnlTrackerApiClient) => {
 		description: 'Append a trading analysis as Markdown to the reserved AI journal note in a specific database. Call this AFTER you have queried trades or metrics and produced a user-requested analysis (counts, summaries, comparisons, performance reviews). Do NOT call this for technical or conversational responses. The content should be formatted Markdown (tables, lists, headers). The title is optional. Always use the same database_id as the analysis. The note is identified by the reserved date 1980-01-01 and displayed as "Analyse IA" in the PnlTracker UI.',
 		inputSchema: AppendAiJournalInputSchema,
 		annotations: appendToolAnnotations,
-	}, async ({ database_id, title, content }) => withErrorBoundary(async () => {
+	}, async ({ database_id, title, content }, extra) => withErrorBoundary(async () => {
 		if (!aiJournalEnabled) return { saved: false, enabled: false, reason: 'AI journal is disabled' }
 
+		const api = createApi(extra.authInfo?.token || '')
 		const response = asRecord(await api.post('/api/mcp/ai-journal', {
 			databaseId: database_id,
 			query: {},
@@ -230,8 +254,8 @@ export const registerTools = (server: McpServer, api: PnlTrackerApiClient) => {
 			idempotentHint: true,
 			openWorldHint: false,
 		},
-	}, async ({ database_id }) => withErrorBoundary(async () => {
-		const response = asRecord(await api.delete('/api/mcp/ai-journal', { databaseId: database_id, query: {} }))
+	}, async ({ database_id }, extra) => withErrorBoundary(async () => {
+		const response = asRecord(await createApi(extra.authInfo?.token || '').delete('/api/mcp/ai-journal', { databaseId: database_id, query: {} }))
 		return {
 			cleared: response.success === true,
 			deleted: readNumber(response, 'deleted'),
@@ -242,8 +266,8 @@ export const registerTools = (server: McpServer, api: PnlTrackerApiClient) => {
 		description: 'List all trading databases accessible to the authenticated user. Call this FIRST to discover available database_id values, which are required by most other tools. Returns each database with its id, name, display_name, and is_default flag.',
 		inputSchema: z.object({}).strict(),
 		annotations: toolAnnotations,
-	}, async () => withErrorBoundary(async () => {
-		const response = await api.get('/api/database/list', { databaseId: undefined, query: {} })
+	}, async (_args, extra) => withErrorBoundary(async () => {
+		const response = await createApi(extra.authInfo?.token || '').get('/api/database/list', { databaseId: undefined, query: {} })
 		return asArray(response).map(value => {
 			const database = asRecord(value)
 			return {
@@ -259,8 +283,8 @@ export const registerTools = (server: McpServer, api: PnlTrackerApiClient) => {
 		description: 'List trading accounts (e.g. MT5/TradingView) in one database. Use the account_ids from the result to filter trades in search_trades or analytics tools.',
 		inputSchema: DatabaseInputSchema,
 		annotations: toolAnnotations,
-	}, async ({ database_id }) => withErrorBoundary(async () => {
-		const response = await api.get('/api/account', { databaseId: database_id, query: {} })
+	}, async ({ database_id }, extra) => withErrorBoundary(async () => {
+		const response = await createApi(extra.authInfo?.token || '').get('/api/account', { databaseId: database_id, query: {} })
 		return asArray(response).map(value => {
 			const account = asRecord(value)
 			return {
@@ -276,8 +300,8 @@ export const registerTools = (server: McpServer, api: PnlTrackerApiClient) => {
 		description: 'List tag groups and tags in one database. Tags are organized in groups (e.g. strategy, timeframe, exit type). Use tag_ids from the result to filter trades in search_trades. Useful for auditing whether trades are properly tagged.',
 		inputSchema: DatabaseInputSchema,
 		annotations: toolAnnotations,
-	}, async ({ database_id }) => withErrorBoundary(async () => {
-		const response = await api.get('/api/tags', { databaseId: database_id, query: {} })
+	}, async ({ database_id }, extra) => withErrorBoundary(async () => {
+		const response = await createApi(extra.authInfo?.token || '').get('/api/tags', { databaseId: database_id, query: {} })
 		return asArray(response).map(value => {
 			const group = asRecord(value)
 			return {
@@ -292,8 +316,8 @@ export const registerTools = (server: McpServer, api: PnlTrackerApiClient) => {
 		description: 'List daily journal notes in one database with optional date filters. Notes contain trader commentary and may reference screenshot images. Use date_from/date_to to narrow the range. The AI journal note (date 1980-01-01) is excluded from this list.',
 		inputSchema: ListDailyNotesInputSchema,
 		annotations: toolAnnotations,
-	}, async ({ database_id, date_from, date_to, page, page_size }) => withErrorBoundary(async () => {
-		const response = await api.get('/api/notes', {
+	}, async ({ database_id, date_from, date_to, page, page_size }, extra) => withErrorBoundary(async () => {
+		const response = await createApi(extra.authInfo?.token || '').get('/api/notes', {
 			databaseId: database_id,
 			query: {
 				date_from,
@@ -315,9 +339,9 @@ export const registerTools = (server: McpServer, api: PnlTrackerApiClient) => {
 		description: 'Search closed trades in one database with filters: date range (date_field: openDate or closeDate, default closeDate), symbols, account_ids, tag_ids, sides (buy/sell), instrument_types (stock/future/forex/option/crypto/any), pnl_min/pnl_max. Use pnl_mode "net" (default) or "gross". Returns trades with P&L, prices, lot size, commission, exchange, MAE/MFE, tags, and risk/reward. Use page_size up to 200 for large result sets. For performance metrics (win rate, profit factor, Sharpe, etc.) use get_performance_summary instead of computing from raw trades.',
 		inputSchema: SearchTradesInputSchema,
 		annotations: toolAnnotations,
-	}, async ({ database_id, filters, pnl_mode, page, page_size }) => withErrorBoundary(async () => {
+	}, async ({ database_id, filters, pnl_mode, page, page_size }, extra) => withErrorBoundary(async () => {
 		const limit = page_size + 1
-		const response = await api.get('/api/trades', {
+		const response = await createApi(extra.authInfo?.token || '').get('/api/trades', {
 			databaseId: database_id,
 			query: {
 				filters: JSON.stringify(toApiFilters(filters, pnl_mode)),
@@ -338,8 +362,8 @@ export const registerTools = (server: McpServer, api: PnlTrackerApiClient) => {
 		description: 'Get a single trade by ID with full details including its attached note text. Use this when the user asks about a specific trade or when you need the trade commentary that search_trades does not include.',
 		inputSchema: GetTradeInputSchema,
 		annotations: toolAnnotations,
-	}, async ({ database_id, trade_id }) => withErrorBoundary(async () => {
-		const response = await api.get(`/api/trades/${trade_id}`, { databaseId: database_id, query: {} })
+	}, async ({ database_id, trade_id }, extra) => withErrorBoundary(async () => {
+		const response = await createApi(extra.authInfo?.token || '').get(`/api/trades/${trade_id}`, { databaseId: database_id, query: {} })
 		return mapTrade(response, true)
 	}))
 
@@ -347,8 +371,8 @@ export const registerTools = (server: McpServer, api: PnlTrackerApiClient) => {
 		description: 'Get authoritative performance metrics for filtered trades: P&L, win rate, profit factor, Sharpe, Sortino, Calmar, max drawdown, max run-up, R-multiples (total R, average R, profit factor R, P/L ratio R), winning/losing streaks, expectancy, recovery factor, ulcer index, SQN. Use pnl_mode "net" (default) or "gross". PREFER this tool over manually computing metrics from search_trades results. Use filters to scope by date, symbol, account, or tags.',
 		inputSchema: AnalyticsInputSchema,
 		annotations: toolAnnotations,
-	}, async ({ database_id, filters, pnl_mode }) => withErrorBoundary(async () => {
-		const response = await api.get('/api/analytics/summary', {
+	}, async ({ database_id, filters, pnl_mode }, extra) => withErrorBoundary(async () => {
+		const response = await createApi(extra.authInfo?.token || '').get('/api/analytics/summary', {
 			databaseId: database_id,
 			query: { filters: JSON.stringify(toApiFilters(filters, pnl_mode)), mode: pnl_mode },
 		})
@@ -359,8 +383,8 @@ export const registerTools = (server: McpServer, api: PnlTrackerApiClient) => {
 		description: 'Break down performance by a dimension: "symbol", "account", "side", "tag", "month", "weekday", "open_hour". Returns per-group metrics (P&L, win rate, profit factor, streaks, etc.). Use pnl_mode "net" (default) or "gross". Useful for comparing which symbols, tags, sides, or time periods are most profitable.',
 		inputSchema: BreakdownInputSchema,
 		annotations: toolAnnotations,
-	}, async ({ database_id, filters, pnl_mode, dimension }) => withErrorBoundary(async () => {
-		const response = await api.get('/api/analytics/breakdown', {
+	}, async ({ database_id, filters, pnl_mode, dimension }, extra) => withErrorBoundary(async () => {
+		const response = await createApi(extra.authInfo?.token || '').get('/api/analytics/breakdown', {
 			databaseId: database_id,
 			query: { filters: JSON.stringify(toApiFilters(filters, pnl_mode)), mode: pnl_mode, dimension },
 		})
@@ -371,8 +395,8 @@ export const registerTools = (server: McpServer, api: PnlTrackerApiClient) => {
 		description: 'Get periodic and cumulative P&L time series for filtered trades. Interval: "day", "week", "month", or "year". Use pnl_mode "net" (default) or "gross". Returns P&L per period and cumulative totals. Useful for visualizing equity curve progression and identifying drawdown/recovery periods.',
 		inputSchema: TimeseriesInputSchema,
 		annotations: toolAnnotations,
-	}, async ({ database_id, filters, pnl_mode, interval }) => withErrorBoundary(async () => {
-		const response = await api.get('/api/analytics/pnl_timeseries', {
+	}, async ({ database_id, filters, pnl_mode, interval }, extra) => withErrorBoundary(async () => {
+		const response = await createApi(extra.authInfo?.token || '').get('/api/analytics/pnl_timeseries', {
 			databaseId: database_id,
 			query: { filters: JSON.stringify(toApiFilters(filters, pnl_mode)), mode: pnl_mode, interval },
 		})
@@ -383,9 +407,9 @@ export const registerTools = (server: McpServer, api: PnlTrackerApiClient) => {
 		description: 'Fetch a screenshot image attached to a trade or daily note. Returns base64-encoded image data with MIME type. The image_path must match a path found in note content (e.g. "screenshots/nt_12_xxx.png"). Use this when the user asks to see a chart screenshot or trade visual.',
 		inputSchema: GetNoteImageInputSchema,
 		annotations: toolAnnotations,
-	}, async ({ database_id, image_path }) => {
+	}, async ({ database_id, image_path }, extra) => {
 		try {
-			const { buffer, mimeType } = await api.getBinary('/api/image', {
+			const { buffer, mimeType } = await createApi(extra.authInfo?.token || '').getBinary('/api/image', {
 				databaseId: database_id,
 				query: { path: image_path },
 			})
