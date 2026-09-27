@@ -16,6 +16,17 @@ mod app_common;
 use app_common::AppLanguage;
 
 pub fn run() {
+	// Lancée via .desktop, l'app hérite du process group de la session XFCE
+	// (pgid de xfsettingsd, partagé par ~toutes les apps du bureau). Le
+	// watchdog cef_focus matche les fenêtres par pgid → sans groupe dédié il
+	// volerait le focus clavier de toutes les fenêtres, pas seulement les
+	// nôtres. setpgid crée un pgid propre à l'app, hérité par les subprocess
+	// CEF forkés ensuite. Échec inoffensif si on est déjà leader de groupe
+	// (lancement depuis un shell avec job control → pgid déjà unique).
+	#[cfg(target_os = "linux")]
+	unsafe {
+		libc::setpgid(0, 0);
+	}
 	let app = tauri::Builder::default()
 		// Sandbox désactivé pour le POC : le sandbox Chromium bloque l'accès au
 		// driver NVIDIA (dri_gbm.so -> Permission denied) et crash le GPU process.
