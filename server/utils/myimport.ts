@@ -138,8 +138,10 @@ export async function restoreBackup(backupPath: string, userId: number, dbName: 
         const { getDataDb } = await import('./db')
         const dataDb = await getDataDb(userId, dbName)
 
-        // Clear existing data (be careful with this in production!)
+        // Wipe + restore dans une seule transaction : si l'import échoue,
+        // le rollback complet préserve la base existante (process #236).
         await dataDb.$transaction([
+            // Clear existing data
             dataDb.tradeTagAssociation.deleteMany({}),
             dataDb.dayTagAssociation.deleteMany({}),
             dataDb.importProfileDayTag.deleteMany({}),
@@ -153,13 +155,9 @@ export async function restoreBackup(backupPath: string, userId: number, dbName: 
             dataDb.configSymbol.deleteMany({}),
             dataDb.dailyNote.deleteMany({}),
             dataDb.importProfile.deleteMany({}),
-            dataDb.plugin.deleteMany({})
-        ])
+            dataDb.plugin.deleteMany({}),
 
-        // console.log(backupVersionInt)
-
-        // Restore data in the correct order to respect foreign key constraints
-        await dataDb.$transaction([
+            // Restore data in the correct order to respect foreign key constraints
             // 1. TagGroups (no dependencies)
             ...data.tagGroups.map(group =>
                 dataDb.tagGroup.create({
@@ -311,7 +309,7 @@ export async function restoreBackup(backupPath: string, userId: number, dbName: 
                 })
             )
 
-        ])
+        ], { timeout: 120_000 })
 
         // Restore plugins (version >= 1.1.7)
         if (backupVersionInt >= 117 && data.plugins?.length) {

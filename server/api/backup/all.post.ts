@@ -1,5 +1,5 @@
 import { restoreBackup } from '~/server/utils/myimport'
-import { getAuthDb, buildShemaName, buildRoleName, createUserDatabase } from '~/server/utils/db'
+import { getAuthDb, createUserDatabase, wipeUserDatabase } from '~/server/utils/db'
 import { createAppError } from '../../utils/errors'
 import { readdir, rm, mkdtemp, readFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
@@ -37,51 +37,6 @@ const extractDbNameFromManifest = async (zipPath: string): Promise<string | null
 		return null
 	} finally {
 		await rm(tempDir, { recursive: true, force: true })
-	}
-}
-
-// Delete an existing database (schema + role + record + upload dir)
-const deleteExistingDatabase = async (userId: number, dbName: string) => {
-	const authDb = getAuthDb()
-	const schemaName = buildShemaName(userId, dbName)
-	const roleName = buildRoleName(userId, dbName)
-
-	try {
-		await authDb.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`)
-		await authDb.$executeRawUnsafe(`DROP ROLE IF EXISTS "${roleName}"`)
-	} catch (e) {
-		console.error(`Failed to drop schema/role for "${dbName}":`, e instanceof Error ? e.message : e)
-	}
-
-	const existing = await authDb.database.findFirst({
-		where: { userId, name: dbName },
-	})
-	if (existing) {
-		try {
-			await authDb.database.delete({ where: { id: existing.id } })
-		} catch {
-			// Record may not exist
-		}
-	}
-
-	// Delete upload directory
-	const uploadPath = join(process.cwd(), 'upload', `user_${userId}_data`, dbName)
-	if (existsSync(uploadPath)) {
-		try {
-			await rm(uploadPath, { recursive: true, force: true })
-		} catch (error) {
-			console.error(`Failed to delete upload directory for "${dbName}":`, error)
-		}
-	}
-
-	// Delete export directory
-	const exportPath = join(process.cwd(), 'temp', 'exports', `user_${userId}`, `db_${dbName}`)
-	if (existsSync(exportPath)) {
-		try {
-			await rm(exportPath, { recursive: true, force: true })
-		} catch (error) {
-			console.error(`Failed to delete export directory for "${dbName}":`, error)
-		}
 	}
 }
 
@@ -179,7 +134,7 @@ export default defineEventHandler(async (event) => {
 				})
 				if (existing) {
 					console.log(`Deleting existing database "${dbName}" before restore...`)
-					await deleteExistingDatabase(userId, dbName)
+					await wipeUserDatabase(userId, dbName)
 				}
 
 				// Create the database (schema + role + record + migrations)

@@ -2,10 +2,7 @@
  * Delete a database with password verification
  */
 import bcrypt from 'bcryptjs'
-import { rm } from 'node:fs/promises'
-import { join } from 'node:path'
-import { existsSync } from 'node:fs'
-import { getAuthDb, buildShemaName, buildRoleName } from '../../utils/db'
+import { getAuthDb, wipeUserDatabase } from '../../utils/db'
 import { createAppError } from '../../utils/errors'
 import auth from '../../utils/auth'
 
@@ -67,57 +64,17 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // Delete the schema and role from PostgreSQL
-        const schemaName = buildShemaName(parseInt(userId), database.name)
-        const roleName = buildRoleName(parseInt(userId), database.name)
-
-        const authDbConnection = getAuthDb()
-        
+        // Wipe schema, role, record and directories (shared helper, process #236)
         try {
-            // Drop schema with cascade (this will also drop all tables)
-            await authDbConnection.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`)
-            
-            // Drop the role
-            await authDbConnection.$executeRawUnsafe(`DROP ROLE IF EXISTS "${roleName}"`)
+            await wipeUserDatabase(parseInt(userId), database.name)
         } catch (error) {
-            console.error('Failed to drop schema/role:', error)
+            console.error('Failed to wipe database:', error)
             throw createAppError({
                 statusCode: 500,
                 message: 'Failed to delete database schema',
                 tag: 'api.database.delete.schema_error',
                 error
             })
-        }
-
-        // Delete database record from auth database
-        await authDb.database.delete({
-            where: {
-                id: databaseId
-            }
-        })
-
-        // Delete upload directory for this database
-        // Remove the entire database folder: ./upload/user_{userId}_data/{dbName}
-        const uploadPath = join(process.cwd(), 'upload', `user_${userId}_data`, database.name)
-        if (existsSync(uploadPath)) {
-            try {
-                await rm(uploadPath, { recursive: true, force: true })
-            } catch (error) {
-                console.error('Failed to delete upload directory:', error)
-                // Don't throw error - database is already deleted
-            }
-        }
-
-        // Delete backup/export directory for this database
-        // Remove: ./temp/exports/user_{userId}/db_{dbName}
-        const exportPath = join(process.cwd(), 'temp', 'exports', `user_${userId}`, `db_${database.name}`)
-        if (existsSync(exportPath)) {
-            try {
-                await rm(exportPath, { recursive: true, force: true })
-            } catch (error) {
-                console.error('Failed to delete export directory:', error)
-                // Don't throw error - database is already deleted
-            }
         }
 
         return {
