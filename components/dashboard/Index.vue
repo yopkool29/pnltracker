@@ -78,7 +78,7 @@
                         name="i-heroicons-arrow-path"
                         class="w-3.5 h-3.5 animate-spin"
                     />
-                    <span>{{ ws.name }}</span>
+                    <span>{{ ws.id === 'summary' ? $t('components.dashboard.index.workspace_summary') : ws.name }}</span>
                     <CommonModalDelete
                         v-if="workspaces.length > 1 && ws.id !== 'summary'"
                         @confirm="removeWorkspace(ws.id)"
@@ -109,24 +109,44 @@
                     @click="addWorkspace"
                 />
                 <div class="flex-1" />
-                <UButton
-                    icon="i-lucide-copy"
-                    size="xs"
-                    variant="ghost"
-                    color="neutral"
-                    class="ml-1 mb-px"
-                    :title="$t('components.dashboard.index.sync_workspace')"
-                    @click="syncActiveWorkspaceToOtherDatabases"
-                />
-                <UButton
-                    icon="i-lucide-monitor"
-                    size="xs"
-                    variant="ghost"
-                    color="neutral"
-                    class="ml-1 mb-px"
-                    :title="$t('components.dashboard.index.sync_dashboard')"
-                    @click="syncDashboardToOtherDatabases"
-                />
+                <CommonModalDelete
+                    :title="$t('components.dashboard.index.sync_workspace_title')"
+                    confirm-color="warning"
+                    @confirm="syncActiveWorkspaceToOtherDatabases"
+                >
+                    <template #trigger>
+                        <UButton
+                            icon="i-lucide-copy"
+                            size="xs"
+                            variant="ghost"
+                            color="neutral"
+                            class="ml-1 mb-px"
+                            :title="$t('components.dashboard.index.sync_workspace')"
+                        />
+                    </template>
+                    <template #content>
+                        {{ $t('components.dashboard.index.sync_workspace_message', { name: activeWorkspace?.id === 'summary' ? $t('components.dashboard.index.workspace_summary') : activeWorkspace?.name }) }}
+                    </template>
+                </CommonModalDelete>
+                <CommonModalDelete
+                    :title="$t('components.dashboard.index.sync_dashboard_title')"
+                    confirm-color="warning"
+                    @confirm="syncDashboardToOtherDatabases"
+                >
+                    <template #trigger>
+                        <UButton
+                            icon="i-lucide-monitor"
+                            size="xs"
+                            variant="ghost"
+                            color="neutral"
+                            class="ml-1 mb-px"
+                            :title="$t('components.dashboard.index.sync_dashboard')"
+                        />
+                    </template>
+                    <template #content>
+                        {{ $t('components.dashboard.index.sync_dashboard_message') }}
+                    </template>
+                </CommonModalDelete>
             </div>
 
             <!-- Barre de contrôle du workspace actif -->
@@ -194,7 +214,7 @@
                         variant="ghost"
                         color="neutral"
                         :title="$t('components.dashboard.index.reset_layout')"
-                        @click="onResetLayout"
+                        @click="showResetLayoutModal = true"
                     >
                         {{ $t('components.dashboard.index.reset_layout') }}
                     </UButton>
@@ -239,6 +259,23 @@
                 {{ t('common.no') }}
             </UButton>
             <UButton size="sm" color="neutral" variant="ghost" @click="onCancelSwitch">
+                {{ t('common.cancel') }}
+            </UButton>
+        </template>
+    </CommonModalDefault>
+
+    <CommonModalDefault
+        v-model:open="showResetLayoutModal"
+        :title="t('components.dashboard.index.reset_layout_title')"
+    >
+        <template #content>
+            <p>{{ t('components.dashboard.index.reset_layout_message') }}</p>
+        </template>
+        <template #footer>
+            <UButton size="sm" color="primary" @click="confirmResetLayout">
+                {{ t('common.actions.reset') }}
+            </UButton>
+            <UButton size="sm" color="neutral" variant="ghost" @click="showResetLayoutModal = false">
                 {{ t('common.cancel') }}
             </UButton>
         </template>
@@ -367,6 +404,12 @@ const {
 const switchWorkspace = (id: WorkspaceId) => switchWorkspaceBase(id, activeWorkspaceId)
 const onSaveAndSwitch = () => onSaveAndSwitchBase(activeWorkspaceId)
 const onDiscardAndSwitch = () => onDiscardAndSwitchBase(activeWorkspaceId)
+
+const showResetLayoutModal = ref(false)
+const confirmResetLayout = () => {
+    onResetLayout()
+    showResetLayoutModal.value = false
+}
 
 const onSyncVisibilityToAllBreakpoints = (chartVisibility: Record<ChartKey, boolean>, sectionVisibility: Record<SectionKey, boolean>) => {
     syncVisibilityToAllBreakpoints(chartVisibility, sectionVisibility)

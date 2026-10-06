@@ -1,6 +1,6 @@
 <template>
-    <div class="relative">
-        <grid-layout :key="gridKey" v-model:layout="localLayout" :col-num="colNum" :row-height="50" :is-draggable="isDraggable"
+    <div ref="rootRef" class="relative">
+        <grid-layout v-if="gridMounted" :key="gridKey" v-model:layout="localLayout" :col-num="colNum" :row-height="50" :is-draggable="isDraggable"
             :is-resizable="isResizable" :vertical-compact="true" :use-css-transforms="true" :is-bounded="true"
             :responsive="false" :use-style-cursor="false"
             :class="{ 'layout-ready': layoutReady, 'select-none': isDraggable, 'drag-mode': isDraggable }"
@@ -68,6 +68,29 @@ defineEmits<{
 }>()
 
 const localLayout = ref(props.layout.map(item => ({ ...item })))
+
+// La grille ne se monte qu'une fois la largeur réelle du conteneur mesurée —
+// sinon vue-grid-layout calcule colWidth avec containerWidth=0 et écrit des
+// styles `width: -Npx` invalides (visibles en console Firefox) au 1er frame.
+const rootRef = ref<HTMLElement | null>(null)
+const gridMounted = ref(false)
+let resizeObserver: ResizeObserver | null = null
+
+onMounted(() => {
+    resizeObserver = new ResizeObserver(entries => {
+        if ((entries[0]?.contentRect.width ?? 0) > 0) {
+            gridMounted.value = true
+            resizeObserver?.disconnect()
+            resizeObserver = null
+        }
+    })
+    if (rootRef.value) resizeObserver.observe(rootRef.value)
+})
+
+onBeforeUnmount(() => {
+    resizeObserver?.disconnect()
+    resizeObserver = null
+})
 
 const isItemResizable = (itemId: string): boolean => {
     if (!props.isResizable) 
