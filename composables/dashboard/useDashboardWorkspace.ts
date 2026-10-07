@@ -14,6 +14,7 @@ let isUndoing = false
 export const useDashboardWorkspace = () => {
 	const dbStateStore = useDbStateStore()
 	const { currentDatabase, databases, fetchDatabases } = useDatabase()
+	const { saveAllUiStates } = useUiStateSync()
 	const { t } = useI18n()
 	const { success: toastSuccess } = useAppToast()
 	const { getDefaultChartVisibility } = useMetricsChartRegistry()
@@ -148,6 +149,7 @@ export const useDashboardWorkspace = () => {
 			}
 		}
 		dbStateStore.dashBoardFiltersPerDb = newPerDb
+		await saveAllUiStates()
 		toastSuccess(t('components.dashboard.index.sync_dashboard_success'))
 	}
 	const syncActiveWorkspaceToOtherDatabases = async () => {
@@ -172,6 +174,7 @@ export const useDashboardWorkspace = () => {
 			newPerDb[db.name] = { ...existing, workspaces: newWorkspaces }
 		}
 		dbStateStore.dashBoardFiltersPerDb = newPerDb
+		await saveAllUiStates()
 		toastSuccess(t('components.dashboard.index.sync_workspace_success'))
 	}
 

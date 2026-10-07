@@ -1,23 +1,39 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { gzipSync } from 'node:zlib'
 import { loginTestUser, checkServerRunning, getSessionHeaders } from './utils/test-helpers'
+import { acquireTestDatabase, releaseTestDatabase } from './utils/test-database'
+
+let testDb: { id: number; name: string }
+
+const getDbUiState = async (): Promise<Record<string, unknown> | undefined> => {
+	const databases = await $fetch('/api/database/list', {
+		headers: getSessionHeaders(),
+	}) as { id: number; metadata?: { pnltracker?: { uiState?: Record<string, unknown> } } }[]
+	const db = databases.find(d => d.id === testDb.id)
+	return db?.metadata?.pnltracker?.uiState
+}
 
 describe('UI State Sync Integration', () => {
 	beforeAll(async () => {
 		await checkServerRunning()
 		await loginTestUser()
-	}, 30000)
+		testDb = await acquireTestDatabase()
+	}, 60000)
+
+	afterAll(async () => {
+		await releaseTestDatabase(testDb.id)
+	})
 
 	it('should save UI state with gzip compression', async () => {
 		const uiState = {
 			customInputsPerDb: {
-				test_db: [
+				[testDb.name]: [
 					{ id: 1, key: 'field1', value: 'value1' },
 					{ id: 2, key: 'field2', value: 'value2' },
 				],
 			},
 			dashBoardFiltersPerDb: {
-				test_db: {
+				[testDb.name]: {
 					accountIds: [1, 2, 3],
 					period: 'last_three_months_until_now',
 					workspaces: [
@@ -33,7 +49,7 @@ describe('UI State Sync Integration', () => {
 				},
 			},
 			chartSettingsPerDb: {
-				test_db: { timeframe: '1m', showAdjacent: true },
+				[testDb.name]: { timeframe: '1m', showAdjacent: true },
 			},
 		}
 
@@ -41,7 +57,7 @@ describe('UI State Sync Integration', () => {
 		const compressed = gzipSync(Buffer.from(json))
 		const base64 = compressed.toString('base64')
 
-		const result = await $fetch('/api/auth/save-ui-state', {
+		const result = await $fetch(`/api/database/${testDb.id}/ui-state`, {
 			method: 'POST',
 			headers: { ...getSessionHeaders(), 'Content-Type': 'application/json' },
 			body: { compressed: base64 },
@@ -53,11 +69,11 @@ describe('UI State Sync Integration', () => {
 	it('should save UI state without compression (plain JSON)', async () => {
 		const uiState = {
 			recentColorsPerDb: {
-				test_db: ['#ff0000', '#00ff00', '#0000ff'],
+				[testDb.name]: ['#ff0000', '#00ff00', '#0000ff'],
 			},
 		}
 
-		const result = await $fetch('/api/auth/save-ui-state', {
+		const result = await $fetch(`/api/database/${testDb.id}/ui-state`, {
 			method: 'POST',
 			headers: { ...getSessionHeaders(), 'Content-Type': 'application/json' },
 			body: uiState,
@@ -66,10 +82,10 @@ describe('UI State Sync Integration', () => {
 		expect(result.success).toBe(true)
 	})
 
-	it('should retrieve saved UI state from auth endpoint', async () => {
+	it('should retrieve saved UI state from database list metadata', async () => {
 		const testData = {
 			tradeOptionsPerDb: {
-				test_db: { showInactive: false, accountIds: [10, 20] },
+				[testDb.name]: { showInactive: false, accountIds: [10, 20] },
 			},
 		}
 
@@ -77,28 +93,24 @@ describe('UI State Sync Integration', () => {
 		const compressed = gzipSync(Buffer.from(json))
 		const base64 = compressed.toString('base64')
 
-		await $fetch('/api/auth/save-ui-state', {
+		await $fetch(`/api/database/${testDb.id}/ui-state`, {
 			method: 'POST',
 			headers: { ...getSessionHeaders(), 'Content-Type': 'application/json' },
 			body: { compressed: base64 },
 		})
 
-		const authData = await $fetch('/api/auth', {
-			headers: getSessionHeaders(),
-		}) as { metadata?: { pnltracker?: { uiState?: Record<string, unknown> } } }
+		const uiState = await getDbUiState()
 
-		expect(authData.metadata).toBeDefined()
-		expect(authData.metadata!.pnltracker).toBeDefined()
-		expect(authData.metadata!.pnltracker!.uiState).toBeDefined()
-		expect(authData.metadata!.pnltracker!.uiState!.tradeOptionsPerDb).toBeDefined()
-		const tradeOptions = authData.metadata!.pnltracker!.uiState!.tradeOptionsPerDb as Record<string, { accountIds: number[] }>
-		expect(tradeOptions.test_db).toBeDefined()
-		expect(tradeOptions.test_db.accountIds).toEqual([10, 20])
+		expect(uiState).toBeDefined()
+		expect(uiState!.tradeOptionsPerDb).toBeDefined()
+		const tradeOptions = uiState!.tradeOptionsPerDb as Record<string, { accountIds: number[] }>
+		expect(tradeOptions[testDb.name]).toBeDefined()
+		expect(tradeOptions[testDb.name].accountIds).toEqual([10, 20])
 	})
 
 	it('should reject invalid compressed data', async () => {
 		try {
-			await $fetch('/api/auth/save-ui-state', {
+			await $fetch(`/api/database/${testDb.id}/ui-state`, {
 				method: 'POST',
 				headers: { ...getSessionHeaders(), 'Content-Type': 'application/json' },
 				body: { compressed: 'invalid-base64-data!!!' },
@@ -106,6 +118,19 @@ describe('UI State Sync Integration', () => {
 			expect.unreachable('Should have thrown')
 		} catch (err) {
 			expect((err as { statusCode?: number }).statusCode).toBe(500)
+		}
+	})
+
+	it('should reject UI state for a database owned by another user', async () => {
+		try {
+			await $fetch('/api/database/999999/ui-state', {
+				method: 'POST',
+				headers: { ...getSessionHeaders(), 'Content-Type': 'application/json' },
+				body: { compressed: gzipSync(Buffer.from('{}')).toString('base64') },
+			})
+			expect.unreachable('Should have thrown')
+		} catch (err) {
+			expect((err as { statusCode?: number }).statusCode).toBe(404)
 		}
 	})
 
@@ -129,7 +154,7 @@ describe('UI State Sync Integration', () => {
 
 		expect(compressedSize).toBeLessThan(uncompressedSize)
 
-		const result = await $fetch('/api/auth/save-ui-state', {
+		const result = await $fetch(`/api/database/${testDb.id}/ui-state`, {
 			method: 'POST',
 			headers: { ...getSessionHeaders(), 'Content-Type': 'application/json' },
 			body: { compressed: base64 },

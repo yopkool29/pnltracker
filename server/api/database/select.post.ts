@@ -80,7 +80,8 @@ export default defineEventHandler(async (event) => {
             id: database.id,
             name: database.name,
             displayName: database.displayName,
-            isDefault: database.isDefault
+            isDefault: database.isDefault,
+            metadata: database.metadata
         }
     } catch (error) {
         const err = error as { statusCode?: number; data?: { tag?: string } }
