@@ -1547,6 +1547,7 @@ export default {
                 show_adjacent: 'Trades adjacents',
                 show_adjacent_lines: 'Lignes adjacentes',
                 show_rth: 'RTH uniquement',
+                dark_mode: 'Mode sombre',
             },
             index: {
                 title: 'Liste des trades',

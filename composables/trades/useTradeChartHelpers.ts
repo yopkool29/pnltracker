@@ -9,19 +9,20 @@ import type { PolygonBar } from '~/utils/polygonSymbol'
 export const useTradeChartHelpers = () => {
 	const isDark = useIsDark()
 
-	const getChartColors = () => {
+	const getChartColors = (dark?: boolean) => {
+		const darkMode = dark ?? isDark.value
 		return {
-			background: isDark.value
+			background: darkMode
 				? { type: ColorType.Solid, color: '#1e1e1e' }
 				: { type: ColorType.VerticalGradient, topColor: '#e5e7eb', bottomColor: '#f3f4f6' },
-			textColor: isDark.value ? '#d1d5db' : '#333',
-			gridColor: isDark.value ? '#2d2d2d' : '#e1e1e1',
-			upColor: isDark.value ? '#22c55e' : '#26a69a',
-			downColor: isDark.value ? '#ef4444' : '#ef5350',
-			buyColor: isDark.value ? '#4ade80' : '#16a34a',
-			sellColor: isDark.value ? '#f87171' : '#dc2626',
-			exitColor: isDark.value ? '#facc15' : '#d97706',
-			lineColor: isDark.value ? '#60a5fa' : '#2563eb',
+			textColor: darkMode ? '#d1d5db' : '#333',
+			gridColor: darkMode ? '#2d2d2d' : '#e1e1e1',
+			upColor: darkMode ? '#22c55e' : '#26a69a',
+			downColor: darkMode ? '#ef4444' : '#ef5350',
+			buyColor: darkMode ? '#4ade80' : '#16a34a',
+			sellColor: darkMode ? '#f87171' : '#dc2626',
+			exitColor: darkMode ? '#facc15' : '#d97706',
+			lineColor: darkMode ? '#60a5fa' : '#2563eb',
 		}
 	}
 

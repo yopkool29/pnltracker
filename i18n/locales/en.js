@@ -1529,6 +1529,7 @@ export default {
                 show_adjacent: 'Adjacent trades',
                 show_adjacent_lines: 'Adjacent lines',
                 show_rth: 'RTH only',
+                dark_mode: 'Dark mode',
             },
             index: {
                 title: 'Trade list',

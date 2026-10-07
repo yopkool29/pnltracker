@@ -63,6 +63,7 @@ export const useDbStateStore = defineStore(
 		const tradeChartShowAdjacentPerDb = ref<Record<string, boolean>>({})
 		const tradeChartShowAdjacentLinesPerDb = ref<Record<string, boolean>>({})
 		const tradeChartRthPerDb = ref<Record<string, Record<string, boolean>>>({})
+		const tradeChartForceDarkPerDb = ref<Record<string, boolean>>({})
 		const chartSettingsPerDb = ref<Record<string, Record<string, Record<string, unknown>>>>({})
 
 		const lastViewedNoteId = perDbValue(lastViewedNoteIdPerDb, s => s ?? null)
@@ -305,6 +306,8 @@ export const useDbStateStore = defineStore(
 
 		const tradeChartRth = perDbValue(tradeChartRthPerDb, s => s ?? {})
 
+		const tradeChartForceDark = perDbValue(tradeChartForceDarkPerDb, s => s ?? false)
+
 		// Get/set RTH preference per instrument type within the current DB.
 		const getTradeChartRth = (instrumentType: string): boolean => {
 			const dbName = getCurrentDbName()
@@ -364,7 +367,7 @@ export const useDbStateStore = defineStore(
 				calendarFiltersPerDb, dashBoardResultPerDb, columnVisibilityPerDb,
 				showDetailedNotePerDb, lastViewedNoteIdPerDb, tradeChartTfPerDb,
 				tradeChartShowAdjacentPerDb, tradeChartShowAdjacentLinesPerDb,
-				tradeChartRthPerDb, chartSettingsPerDb,
+				tradeChartRthPerDb, tradeChartForceDarkPerDb, chartSettingsPerDb,
 			]
 			for (const ref of perDbRefs) {
 				ref.value = Object.fromEntries(
@@ -382,7 +385,7 @@ export const useDbStateStore = defineStore(
 				calendarFiltersPerDb, dashBoardResultPerDb, columnVisibilityPerDb,
 				showDetailedNotePerDb, lastViewedNoteIdPerDb, tradeChartTfPerDb,
 				tradeChartShowAdjacentPerDb, tradeChartShowAdjacentLinesPerDb,
-				tradeChartRthPerDb, chartSettingsPerDb,
+				tradeChartRthPerDb, tradeChartForceDarkPerDb, chartSettingsPerDb,
 			]
 			for (const ref of perDbRefs) {
 				ref.value = {}
@@ -411,6 +414,7 @@ export const useDbStateStore = defineStore(
 			tradeChartShowAdjacentPerDb,
 			tradeChartShowAdjacentLinesPerDb,
 			tradeChartRthPerDb,
+			tradeChartForceDarkPerDb,
 			chartSettingsPerDb,
 			// Computed wrappers
 			lastViewedNoteId,
@@ -432,6 +436,7 @@ export const useDbStateStore = defineStore(
 			tradeChartShowAdjacent,
 			tradeChartShowAdjacentLines,
 			tradeChartRth,
+			tradeChartForceDark,
 			getTradeChartRth,
 			setTradeChartRth,
 			chartSettings,
@@ -465,6 +470,7 @@ export const useDbStateStore = defineStore(
 				'tradeChartShowAdjacentPerDb',
 				'tradeChartShowAdjacentLinesPerDb',
 				'tradeChartRthPerDb',
+				'tradeChartForceDarkPerDb',
 				'chartSettingsPerDb',
 			],
 		},

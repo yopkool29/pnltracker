@@ -233,6 +233,23 @@ input:autofill:focus {
     z-index: 9999 !important;
 }
 
+/* Modales empilées : seul le premier overlay assombrit le fond —
+   les overlays suivants (enfants directs de body, dans l'ordre
+   d'ouverture) sont transparents pour éviter l'assombrissement cumulatif. */
+body > .app-modal-overlay ~ .app-modal-overlay {
+    background-color: transparent;
+}
+
+/* Light mode (light et light-blue) : assombrissement plus léger que
+   le bg-black/50 du slot — même règle d'empilement, spécificité
+   identique pour que la transparence reste prioritaire. */
+html:not(.dark) body > .app-modal-overlay {
+    background-color: rgb(0 0 0 / 0.15);
+}
+html:not(.dark) body > .app-modal-overlay ~ .app-modal-overlay {
+    background-color: transparent;
+}
+
 /* S'assurer que les tooltips sont visibles même après fermeture des modales */
 [data-floating-ui-portal] {
     pointer-events: auto !important;
