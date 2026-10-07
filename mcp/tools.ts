@@ -380,7 +380,7 @@ export const registerTools = (server: McpServer, createApi: McpApiClientFactory)
 	}))
 
 	server.registerTool('get_performance_breakdown', {
-		description: 'Break down performance by a dimension: "symbol", "account", "side", "tag", "month", "weekday", "open_hour". Returns per-group metrics (P&L, win rate, profit factor, streaks, etc.). Use pnl_mode "net" (default) or "gross". Useful for comparing which symbols, tags, sides, or time periods are most profitable.',
+		description: 'Break down performance by a dimension: "symbol", "account", "side", "tag", "month"/"month_close", "weekday"/"weekday_close", "open_hour"/"close_hour". Time dimensions group by trade open date by default; the *_close variants group by close date (realized P&L convention). Returns per-group metrics (P&L, win rate, profit factor, streaks, etc.). Use pnl_mode "net" (default) or "gross". Useful for comparing which symbols, tags, sides, or time periods are most profitable.',
 		inputSchema: BreakdownInputSchema,
 		annotations: toolAnnotations,
 	}, async ({ database_id, filters, pnl_mode, dimension }, extra) => withErrorBoundary(async () => {

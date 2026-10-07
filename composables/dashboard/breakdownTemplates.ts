@@ -87,10 +87,14 @@ export const tradeTooltipOptions: { value: TradeTooltipField; labelKey: string }
 // Templates prêts à l'emploi (raccourcis pour créer un chart pré-configuré)
 const chartTemplates: ChartTemplate[] = [
 	// --- Répartition : Barres ---
-	{ id: 'pnlByDayOfWeek', labelKey: 'components.dashboard.templates.pnl_by_day_of_week', category: 'breakdown', subcategory: 'bars', baseKey: 'breakdownBarVertical', config: { dimension: 'dayOfWeekOpen', metric: 'pnl', chartType: 'barVertical' } },
+	// Dimensions temporelles en *_close : convention realized P&L, cohérent
+	// avec la timeseries et le calendrier qui groupent déjà par closeDate.
+	// Exception : hourStart/heatmapHourDay restent sur l'heure d'ouverture
+	// (le moment d'entrée est le sujet, pas la réalisation du P&L).
+	{ id: 'pnlByDayOfWeek', labelKey: 'components.dashboard.templates.pnl_by_day_of_week', category: 'breakdown', subcategory: 'bars', baseKey: 'breakdownBarVertical', config: { dimension: 'dayOfWeekClose', metric: 'pnl', chartType: 'barVertical' } },
 	{ id: 'winrateByHour', labelKey: 'components.dashboard.templates.winrate_by_hour', category: 'breakdown', subcategory: 'bars', baseKey: 'breakdownBarVertical', config: { dimension: 'hourStart', metric: 'winrate', chartType: 'barVertical' } },
-	{ id: 'pnlByMonth', labelKey: 'components.dashboard.templates.pnl_by_month', category: 'breakdown', subcategory: 'bars', baseKey: 'breakdownBar', config: { dimension: 'monthOpen', metric: 'pnl', chartType: 'bar' } },
-	{ id: 'pnlByMonthYear', labelKey: 'components.dashboard.templates.pnl_by_month_year', category: 'breakdown', subcategory: 'bars', baseKey: 'breakdownBar', config: { dimension: 'monthYearOpen', metric: 'pnl', chartType: 'bar' } },
+	{ id: 'pnlByMonth', labelKey: 'components.dashboard.templates.pnl_by_month', category: 'breakdown', subcategory: 'bars', baseKey: 'breakdownBar', config: { dimension: 'monthClose', metric: 'pnl', chartType: 'bar' } },
+	{ id: 'pnlByMonthYear', labelKey: 'components.dashboard.templates.pnl_by_month_year', category: 'breakdown', subcategory: 'bars', baseKey: 'breakdownBar', config: { dimension: 'monthYearClose', metric: 'pnl', chartType: 'bar' } },
 	// --- Répartition : Heatmap ---
 	{ id: 'heatmapHourDay', labelKey: 'components.dashboard.templates.heatmap_hour_day', category: 'breakdown', subcategory: 'scatterHeatmap', baseKey: 'breakdownHeatmap', config: { dimension: 'hourStart', dimension2: 'dayOfWeekOpen', metric: 'pnl', chartType: 'heatmap' } },
 	// --- Distribution & profils ---

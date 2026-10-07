@@ -48,7 +48,7 @@ export const groupByMonthYearOpen = (tz?: TimezoneSettings): GroupFn => (t) => {
 	return [`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`]
 }
 
-const groupByMonthYearClose = (tz?: TimezoneSettings): GroupFn => (t) => {
+export const groupByMonthYearClose = (tz?: TimezoneSettings): GroupFn => (t) => {
 	if (tz) {
 		const { year, month } = getHourAndWeekdayInUserTimezone(new Date(t.closeDate), tz.timezoneDisplay, tz.timezoneLocal, tz.timezoneUtcOffset)
 		return [`${year}-${String(month + 1).padStart(2, '0')}`]
