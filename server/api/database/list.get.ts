@@ -30,6 +30,7 @@ export default defineEventHandler(async (event) => {
             displayName: db.displayName,
             isDefault: db.isDefault,
             createdAt: db.createdAt,
+            updatedAt: db.updatedAt,
             migrationVersion: db.migrationVersion,
             metadata: db.metadata
         }))

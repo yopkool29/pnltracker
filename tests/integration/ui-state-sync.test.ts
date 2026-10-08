@@ -108,6 +108,25 @@ describe('UI State Sync Integration', () => {
 		expect(tradeOptions[testDb.name].accountIds).toEqual([10, 20])
 	})
 
+	it('should not bump updatedAt when saving UI state', async () => {
+		const getUpdatedAt = async (): Promise<string | undefined> => {
+			const databases = await $fetch('/api/database/list', {
+				headers: getSessionHeaders(),
+			}) as { id: number; updatedAt?: string }[]
+			return databases.find(d => d.id === testDb.id)?.updatedAt
+		}
+
+		const before = await getUpdatedAt()
+
+		await $fetch(`/api/database/${testDb.id}/ui-state`, {
+			method: 'POST',
+			headers: { ...getSessionHeaders(), 'Content-Type': 'application/json' },
+			body: { compressed: gzipSync(Buffer.from('{"probe":1}')).toString('base64') },
+		})
+
+		expect(await getUpdatedAt()).toBe(before)
+	})
+
 	it('should reject invalid compressed data', async () => {
 		try {
 			await $fetch(`/api/database/${testDb.id}/ui-state`, {

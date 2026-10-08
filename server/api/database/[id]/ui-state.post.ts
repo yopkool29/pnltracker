@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
 
 		const database = await prisma.database.findFirst({
 			where: { id: databaseId, userId },
-			select: { id: true, metadata: true }
+			select: { id: true, metadata: true, updatedAt: true }
 		})
 
 		if (!database) {
@@ -74,9 +74,11 @@ export default defineEventHandler(async (event) => {
 			},
 		}
 
+		// updatedAt préservé : il sert de "dernière utilisation" (tri de la liste,
+		// bumpé par select.post) — un save d'état ne doit pas changer l'ordre
 		await prisma.database.update({
 			where: { id: databaseId },
-			data: { metadata: updatedMetadata }
+			data: { metadata: updatedMetadata, updatedAt: database.updatedAt }
 		})
 
 		return { success: true }
