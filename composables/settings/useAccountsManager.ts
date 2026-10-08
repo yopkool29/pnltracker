@@ -2,10 +2,12 @@ import { CreateAccountSchema, type AccountType, type CreateAccountType, type Upd
 import type { CustomField } from '~/schema/symbol'
 import type { FormSubmitEvent, FormErrorEvent } from '@nuxt/ui'
 import type { TradeFilter, FilterColumn } from '~/type'
-import { metadataHelpers } from '~/utils/metadataHelpers'
 import { getAliasDisplay } from '~/utils/aliasResolver'
 
-type AccountMetadata = { customFields?: { key: string; value?: string }[] }
+type AccountMetadata = {
+	customFields?: { key: string; value?: string }[]
+	startingCapital?: number
+}
 
 export const useAccountsManager = () => {
 	const { t } = useI18n()
@@ -141,7 +143,7 @@ export const useAccountsManager = () => {
 	}
 
 	const getStartingCapital = (account: AccountType): number | null => {
-		return metadataHelpers.get<number>(account.metadata, 'startingCapital') ?? null
+		return (account.metadata as AccountMetadata | null)?.startingCapital ?? null
 	}
 
 	const getAccountAliasDisplay = (account: AccountType) => getAliasDisplay(account)
@@ -168,7 +170,7 @@ export const useAccountsManager = () => {
 		displayMessage(null, null)
 		editingAccountId.value = account.id
 		newAccountState.value = { ...account }
-		startingCapital.value = metadataHelpers.get(account.metadata, 'startingCapital') ?? null
+		startingCapital.value = (account.metadata as AccountMetadata | null)?.startingCapital ?? null
 		initCustomFieldsFromAccount(account)
 		showAddAccount.value = true
 	}

@@ -1,5 +1,4 @@
 import type { TradeFilter } from '~/type'
-import { metadataHelpers } from '~/utils/metadataHelpers'
 import { buildFiltersForApi } from '~/composables/data/useDashboard'
 import type { SettingsContentType } from '~/schema/user'
 
@@ -27,7 +26,7 @@ export const useDashboardData = (
 		}
 		let totalCapital = 0
 		for (const account of availableAccounts) {
-			const capital = metadataHelpers.get<number>(account.metadata, 'startingCapital')
+			const capital = (account.metadata as { startingCapital?: number } | null)?.startingCapital
 			if (capital !== null && capital !== undefined) {
 				totalCapital += capital
 			} else {
