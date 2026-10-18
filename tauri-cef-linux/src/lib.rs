@@ -12,6 +12,13 @@ mod desktop_windows;
 mod desktop_common;
 #[path = "../../tauri-shared/app_common.rs"]
 mod app_common;
+// Confirmation de fermeture : modale GTK4 in-process sous Linux (la seule
+// qui couvre le navigateur CEF), rfd ailleurs.
+#[cfg(target_os = "linux")]
+mod quit_dialog;
+#[cfg(not(target_os = "linux"))]
+#[path = "../../tauri-shared/quit_dialog_rfd.rs"]
+mod quit_dialog;
 
 use app_common::AppLanguage;
 

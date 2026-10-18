@@ -10,6 +10,8 @@ mod desktop_windows;
 mod desktop_common;
 #[path = "../../tauri-shared/app_common.rs"]
 mod app_common;
+#[path = "../../tauri-shared/quit_dialog_rfd.rs"]
+mod quit_dialog;
 
 use app_common::AppLanguage;
 

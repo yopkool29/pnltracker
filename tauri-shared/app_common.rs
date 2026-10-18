@@ -6,6 +6,10 @@
 // Langue courante de l'app, mise à jour par le frontend via set_app_language
 pub(crate) struct AppLanguage(pub(crate) std::sync::Mutex<String>);
 
+// Un seul dialogue de confirmation à la fois : chaque clic sur fermer
+// déclenche un CloseRequested — sans garde ils s'empilent.
+static CLOSE_DIALOG_PENDING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 // Ferme le splashscreen et montre la fenêtre principale
 // Appelée par le frontend quand le DOM est prêt
 #[tauri::command]
@@ -31,11 +35,32 @@ pub(crate) fn quit_app(app: tauri::AppHandle) {
 	app.exit(0);
 }
 
-// Messages de confirmation de fermeture par langue
-fn close_confirm_messages(lang: &str) -> (&'static str, &'static str) {
+// Textes de la confirmation de fermeture (les boutons Oui/Non sont
+// localisés par l'impl native sous gtk4 ; rfd les localise déjà).
+pub(crate) struct QuitLabels {
+	pub(crate) message: &'static str,
+	pub(crate) title: &'static str,
+	// yes/no ne sont utilisés que par l'impl GTK4 (rfd a ses propres boutons)
+	#[allow(dead_code)]
+	pub(crate) yes: &'static str,
+	#[allow(dead_code)]
+	pub(crate) no: &'static str,
+}
+
+fn close_confirm_labels(lang: &str) -> QuitLabels {
 	match lang {
-		"fr" => ("Voulez-vous vraiment quitter PnlTracker ?", "Confirmation"),
-		_ => ("Are you sure you want to quit PnlTracker?", "Confirmation"),
+		"fr" => QuitLabels {
+			message: "Voulez-vous vraiment quitter PnlTracker ?",
+			title: "Confirmation",
+			yes: "Oui",
+			no: "Non",
+		},
+		_ => QuitLabels {
+			message: "Are you sure you want to quit PnlTracker?",
+			title: "Confirmation",
+			yes: "Yes",
+			no: "No",
+		},
 	}
 }
 
@@ -68,7 +93,6 @@ pub(crate) fn on_window_event(window: &tauri::Window, event: &tauri::WindowEvent
 	}
 	if let tauri::WindowEvent::CloseRequested { api, .. } = event {
 		use tauri::Manager;
-		use tauri_plugin_dialog::DialogExt;
 		let lang = window
 			.app_handle()
 			.try_state::<AppLanguage>()
@@ -84,36 +108,39 @@ pub(crate) fn on_window_event(window: &tauri::Window, event: &tauri::WindowEvent
 		{
 			println!("[close_dialog] current lang={lang}");
 		}
-		let (message, title) = close_confirm_messages(&lang);
 		// Empêcher la fermeture par défaut
 		api.prevent_close();
-		let app_handle = window.app_handle().clone();
-		window
-			.dialog()
-			.message(message)
-			.title(title)
-			.kind(tauri_plugin_dialog::MessageDialogKind::Warning)
-			.buttons(tauri_plugin_dialog::MessageDialogButtons::YesNo)
-			.show(move |confirmed| {
-				if confirmed {
-					// Émettre un événement pour que le frontend affiche un overlay
-					// de fermeture avant d'arrêter les services.
-					use tauri::Emitter;
-					let _ = app_handle.emit("app:shutdown", ());
-					// Arrêter les services dans un thread séparé pour ne pas
-					// bloquer le main thread et laisser l'overlay s'afficher.
-					let handle = app_handle.clone();
-					std::thread::spawn(move || {
-						// Laisser le temps à l'overlay de s'afficher
-						std::thread::sleep(std::time::Duration::from_millis(600));
-						#[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "linux"))]
-						crate::desktop::stop(&handle);
-						#[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "windows"))]
-						crate::desktop_windows::stop(&handle);
-						handle.exit(0);
-					});
-				}
-			});
+		// Ignore les CloseRequested répétés tant qu'une confirmation est ouverte
+		use std::sync::atomic::Ordering;
+		if CLOSE_DIALOG_PENDING.swap(true, Ordering::SeqCst) {
+			return;
+		}
+		// Délégué par runtime : AlertDialog gtk4 modale sous CEF, rfd sinon.
+		crate::quit_dialog::show(window, close_confirm_labels(&lang));
+	}
+}
+
+// Réponse à la confirmation de fermeture, appelée par les impls quit_dialog
+pub(crate) fn on_quit_answer(app_handle: &tauri::AppHandle, confirmed: bool) {
+	use std::sync::atomic::Ordering;
+	CLOSE_DIALOG_PENDING.store(false, Ordering::SeqCst);
+	if confirmed {
+		// Émettre un événement pour que le frontend affiche un overlay
+		// de fermeture avant d'arrêter les services.
+		use tauri::Emitter;
+		let _ = app_handle.emit("app:shutdown", ());
+		// Arrêter les services dans un thread séparé pour ne pas
+		// bloquer le main thread et laisser l'overlay s'afficher.
+		let handle = app_handle.clone();
+		std::thread::spawn(move || {
+			// Laisser le temps à l'overlay de s'afficher
+			std::thread::sleep(std::time::Duration::from_millis(600));
+			#[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "linux"))]
+			crate::desktop::stop(&handle);
+			#[cfg(all(not(debug_assertions), feature = "desktop-production", target_os = "windows"))]
+			crate::desktop_windows::stop(&handle);
+			handle.exit(0);
+		});
 	}
 }
 
