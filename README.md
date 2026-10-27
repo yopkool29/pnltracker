@@ -1,6 +1,10 @@
 # 📊 PnlTracker - Trading Journal
 
-**PnlTracker** is a modern trading journal web application built with Nuxt 3, allowing traders to track, analyze, and optimize their trading performance — fully local, nothing leaves your machine.
+[![Release](https://img.shields.io/github/v/release/yopkool29/pnltracker)](https://github.com/yopkool29/pnltracker/releases)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE.txt)
+![Platforms](https://img.shields.io/badge/platforms-Web%20%7C%20Windows%20%7C%20Linux-lightgrey)
+
+**PnlTracker** is a modern trading journal built with Nuxt 3 — available as a self-hosted **web application** (Docker) and as a **desktop app** for Windows and Linux (Tauri) — letting traders track, analyze, and optimize their trading performance. Fully local, nothing leaves your machine.
 
 > 🚀 This project is actively evolving. New features and improvements are added regularly.
 
@@ -27,6 +31,10 @@
 |-----------|------------|
 | ![Dark](./docs/images/preview-d.png) | ![Light](./docs/images/preview-l.png) |
 
+| Trade edition | Tag management |
+|---------------|----------------|
+| ![Trade edition](./docs/images/tradeEdition.png) | ![Tag management](./docs/images/tagsEdition.png) |
+
 
 > 📖 See the full documentation with screenshots and guides at [doc.pnltracker.app](https://doc.pnltracker.app)
 
@@ -37,10 +45,22 @@
 - **Database**: PostgreSQL with multi-schema isolation
 - **ORM**: Prisma
 - **Charts**: Chart.js, ECharts, Lightweight Charts (TradingView)
+- **Desktop**: Tauri — Windows (NSIS) and Linux (WebKitGTK & CEF builds)
+- **Automation**: built-in MCP server (streamable HTTP)
+
+## 📥 Download
+
+Pre-built binaries are on the [GitHub Releases](https://github.com/yopkool29/pnltracker/releases) page:
+
+| Platform | Packages |
+|----------|----------|
+| 🪟 Windows | `PnlTracker_*_x64-setup.exe` (NSIS installer) |
+| 🐧 Linux | `PnlTracker_*_amd64.deb` / `.AppImage` (WebKitGTK) · `PnlTracker-CEF_*` (Chromium Embedded variant) |
+| 🍎 macOS | coming soon |
+
+Or self-host the web app with Docker — see below.
 
 ## 🚀 Getting Started
-
-> 📦 Pre-built Linux & Windows binaries are available on the [GitHub Releases](https://github.com/yopkool29/pnlTracker/releases) page. MacOS builds will follow.
 
 ### Prerequisites
 
@@ -115,7 +135,7 @@ This opens PnlTracker in a Tauri WebView while keeping the site available on por
 - **Email**: `admin@mail.fr`
 - **Password**: `admin`
 
-## 📊 Features
+## 📋 Feature Details
 
 ### Trade Management
 - Manual trade entry and editing
