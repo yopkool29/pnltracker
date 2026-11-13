@@ -4,7 +4,7 @@ import type { TradeExtendedType } from '~/schema/trade'
 import { getWinrate } from '~/utils/tradeStats'
 import { formatDateLongString, formatDateToYYYYMMDD } from '~/utils/date-utils'
 
-export type DayData = {
+type DayData = {
 	dayNumber: number
 	isCurrentMonth: boolean
 	count: number
@@ -17,7 +17,7 @@ export type DayData = {
 	hasDetailedNote: boolean
 }
 
-export type WeekData = {
+type WeekData = {
 	days: DayData[]
 	total: number
 }

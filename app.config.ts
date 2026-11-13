@@ -28,6 +28,25 @@ export default defineAppConfig({
 			primary: 'emerald',
 			neutral: 'slate',
 		},
+		// Overlay sombre dans tous les thèmes — le défaut bg-elevated/75 est
+		// blanc en light mode (effet blanchi). Assombrit comme en dark mode.
+		// app-modal-overlay permet à main.css de n'assombrir que le 1er overlay
+		// (modales empilées) au lieu de cumuler l'opacité.
+		modal: {
+			slots: {
+				overlay: 'bg-black/50 app-modal-overlay',
+			},
+		},
+		slideover: {
+			slots: {
+				overlay: 'bg-black/50 app-modal-overlay',
+			},
+		},
+		drawer: {
+			slots: {
+				overlay: 'bg-black/50 app-modal-overlay',
+			},
+		},
 		formField: {
 			slots: {
 				error: 'font-semibold text-red-500',

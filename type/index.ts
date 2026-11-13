@@ -78,11 +78,11 @@ export interface TradeOptions {
     lastFilterColumn: string
 }
 
-export type ChartKey = 'pnlBar' | 'cumulatedPnl' | 'appt' | 'winrate' | 'hourlyHeatmap' | string
-export type SectionKey = 'allTrades' | 'profitTrades' | 'losingTrades' | 'winLossComparison' | 'riskRatios' | 'dayStatistics'
+export type ChartKey = 'pnlBar' | 'cumulatedPnl' | 'appt' | 'winrate' | string
+export type SectionKey = 'metricsCards' | 'allTrades' | 'profitTrades' | 'losingTrades' | 'winLossComparison' | 'riskRatios' | 'dayStatistics'
 
 // Liste des clés de sections (source de vérité unique)
-export const sectionKeys: SectionKey[] = ['allTrades', 'profitTrades', 'losingTrades', 'winLossComparison', 'riskRatios', 'dayStatistics']
+export const sectionKeys: SectionKey[] = ['metricsCards', 'allTrades', 'profitTrades', 'losingTrades', 'winLossComparison', 'riskRatios', 'dayStatistics']
 
 // Préfixes des types de breakdown (base key sans l'ID d'instance)
 export type BreakdownBaseKey = 'breakdownBar' | 'breakdownBarVertical' | 'breakdownScatter' | 'breakdownScatter2D' | 'breakdownScatterTrades' | 'breakdownTable' | 'breakdownHeatmap' | 'breakdownBoxplot' | 'breakdownCalendar' | 'breakdownRadar' | 'timeSeries'

@@ -8,7 +8,7 @@
 <script setup lang="ts">
 import type { StatsRow } from '~/components/dashboard/charts/base/StatsSection.vue'
 import { useMetricsBaseSectionPattern } from '~/composables/dashboard/useBaseSectionPattern'
-import { formatNumberValue } from '~/utils/dashboard'
+import { formatNumberValue } from '~/utils/chartFormat'
 
 const { result } = useMetricsBaseSectionPattern()
 

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const AnalyticsModeSchema = z.enum(['net', 'gross'])
-export const AnalyticsDimensionSchema = z.enum(['symbol', 'account', 'side', 'tag', 'month', 'weekday', 'open_hour'])
+export const AnalyticsDimensionSchema = z.enum(['symbol', 'account', 'side', 'tag', 'month', 'weekday', 'open_hour', 'month_close', 'weekday_close', 'close_hour'])
 export const AnalyticsIntervalSchema = z.enum(['day', 'week', 'month', 'year'])
 export const RMultipleReliabilitySchema = z.enum(['reliable', 'partial', 'approximate', 'none'])
 

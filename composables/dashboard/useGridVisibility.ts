@@ -1,14 +1,5 @@
 import type { ChartKey, SectionKey, WorkspaceConfig } from '~/type'
 
-export interface GridVisibilityConfig {
-	chartVisibilityLg: Record<ChartKey, boolean>
-	chartVisibilityMd: Record<ChartKey, boolean>
-	chartVisibilitySm: Record<ChartKey, boolean>
-	sectionVisibilityLg: Record<SectionKey, boolean>
-	sectionVisibilityMd: Record<SectionKey, boolean>
-	sectionVisibilitySm: Record<SectionKey, boolean>
-}
-
 export const useGridVisibility = (
 	activeWorkspace: ComputedRef<WorkspaceConfig | null>,
 	updateActiveWorkspace: (patch: Partial<WorkspaceConfig>) => void,
@@ -66,16 +57,6 @@ export const useGridVisibility = (
 		}
 	})
 
-	const isItemVisible = (itemId: string): boolean => {
-		if (itemId in activeChartVisibility.value) {
-			return activeChartVisibility.value[itemId as ChartKey]
-		}
-		if (itemId in activeSectionVisibility.value) {
-			return activeSectionVisibility.value[itemId as SectionKey]
-		}
-		return false
-	}
-
 	const syncVisibilityToAllBreakpoints = (
 		chartVisibility: Record<ChartKey, boolean>,
 		sectionVisibility: Record<SectionKey, boolean>
@@ -99,7 +80,6 @@ export const useGridVisibility = (
 		sectionVisibilitySm,
 		activeChartVisibility,
 		activeSectionVisibility,
-		isItemVisible,
 		syncVisibilityToAllBreakpoints,
 	}
 }

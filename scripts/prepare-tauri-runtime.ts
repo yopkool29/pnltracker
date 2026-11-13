@@ -28,9 +28,11 @@ const execIgnoreStderr = (cmd: string, args: string[], options: Record<string, u
 }
 const nodeVersion = '22.23.2'
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const tauriConfig = JSON.parse(await readFile(join(rootDir, 'src-tauri', 'tauri.conf.json'), 'utf8')) as TauriConfig
+// Dossier Tauri cible — src-tauri par défaut, tauri-cef-linux pour le build CEF
+const tauriDir = process.env.TAURI_DIR ?? 'src-tauri'
+const tauriConfig = JSON.parse(await readFile(join(rootDir, tauriDir, 'tauri.conf.json'), 'utf8')) as TauriConfig
 const cacheDir = join(rootDir, '.cache', 'tauri')
-const runtimeDir = join(rootDir, 'src-tauri', 'runtime')
+const runtimeDir = join(rootDir, tauriDir, 'runtime')
 const appDir = join(runtimeDir, 'app')
 
 const isWindows = process.platform === 'win32'
@@ -167,7 +169,7 @@ const fileExists = async (path: string): Promise<boolean> => {
 
 const prepareApp = async () => {
 	await robustCp(join(rootDir, '.output'), join(appDir, '.output'))
-	await cp(join(rootDir, 'src-tauri', 'server-start.mjs'), join(appDir, 'server-start.mjs'))
+	await cp(join(rootDir, tauriDir, 'server-start.mjs'), join(appDir, 'server-start.mjs'))
 	await robustCp(join(rootDir, 'scripts'), join(appDir, 'scripts'))
 	await robustCp(join(rootDir, 'pnltracker-tools'), join(appDir, 'pnltracker-tools'))
 	await robustRm(join(appDir, 'pnltracker-tools', 'python', '.venv'))

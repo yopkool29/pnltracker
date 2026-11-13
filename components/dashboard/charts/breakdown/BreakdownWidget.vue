@@ -264,7 +264,7 @@
 <script setup lang="ts">
 import type { BreakdownConfig, TradeTooltipField } from '~/type'
 import type { TimezoneSettings } from '~/composables/analytics/useAnalytics'
-import { migrateDimension, tradeTooltipOptions } from '~/composables/dashboard/useBreakdownConfig'
+import { migrateDimension, tradeTooltipOptions } from '~/composables/dashboard/breakdownTemplates'
 import { useBreakdownWidgetControls } from '~/composables/dashboard/useBreakdownWidgetControls'
 import { useTooltipMetrics } from '~/composables/charts/useTooltipMetrics'
 import { isTagGroupDimension, getTagGroupName } from '~/type'

@@ -19,6 +19,14 @@ describe('analytics API query validation', () => {
 		})
 	})
 
+	it('accepts every breakdown dimension including *_close variants', () => {
+		const dimensions = ['symbol', 'account', 'side', 'tag', 'month', 'weekday', 'open_hour', 'month_close', 'weekday_close', 'close_hour']
+		for (const dimension of dimensions) {
+			const query = parseAnalyticsQuery(analyticsBreakdownQuerySchema, { dimension })
+			expect(query.dimension).toBe(dimension)
+		}
+	})
+
 	it('accepts gross mode and every supported timeseries interval', () => {
 		for (const interval of ['day', 'week', 'month', 'year']) {
 			const query = parseAnalyticsQuery(analyticsTimeseriesQuerySchema, { mode: 'gross', interval })

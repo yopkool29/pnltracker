@@ -10,8 +10,14 @@ export const useExternalLinks = () => {
 
 	const openExternal = async (url: string) => {
 		if (isTauri.value) {
-			const { open } = await import('@tauri-apps/plugin-shell')
-			await open(url)
+			const { invoke } = await import('@tauri-apps/api/core')
+			try {
+				// Runtime CEF (tauri v3) : open() a quitté le plugin shell pour opener
+				await invoke('plugin:opener|open_url', { url })
+			} catch {
+				const { open } = await import('@tauri-apps/plugin-shell')
+				await open(url)
+			}
 		} else {
 			window.open(url, '_blank', 'noopener,noreferrer')
 		}

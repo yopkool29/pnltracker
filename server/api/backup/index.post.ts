@@ -2,7 +2,7 @@ import { defineEventHandler, readMultipartFormData } from 'h3'
 import { writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { restoreBackup } from '~/server/utils/myexport'
+import { restoreBackup } from '~/server/utils/myimport'
 import { formatDateForFilename } from '~/utils/date-utils'
 import { createAppError } from '../../utils/errors'
 

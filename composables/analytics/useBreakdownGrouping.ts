@@ -102,7 +102,7 @@ export const groupByHourEnd = (tz?: TimezoneSettings): GroupFn => (t) => {
 
 // By Tag Group : filtre les tags du trade par groupId, retourne le nom du tag
 // Un trade sans tag de ce groupe n'est pas groupé (pas d'entrée 'untagged')
-export const groupByTagGroup = (groupId: number): GroupFn => (t) => {
+const groupByTagGroup = (groupId: number): GroupFn => (t) => {
 	if (!t.tags || t.tags.length === 0) return []
 	const tagsInGroup = t.tags.filter(tag => tag.groupId === groupId)
 	if (tagsInGroup.length === 0) return []
@@ -111,7 +111,7 @@ export const groupByTagGroup = (groupId: number): GroupFn => (t) => {
 
 // Map dimension → factory de groupFn (accepte timezone settings optionnels)
 // Les dimensions non temporelles ignorent le paramètre tz
-export const dimensionGroupFnFactories: Record<string, (tz?: TimezoneSettings) => GroupFn> = {
+const dimensionGroupFnFactories: Record<string, (tz?: TimezoneSettings) => GroupFn> = {
 	ticker: () => groupByTicker,
 	tag: () => groupByTag,
 	side: () => groupBySide,

@@ -14,6 +14,9 @@ RUN npm install -g pnpm
 
 # Copy package files and prisma schema
 COPY package.json pnpm-lock.yaml ./
+COPY patches ./patches
+# Requis par le postinstall (nuxt prepare && tsx scripts/patch-nitro-windows.ts)
+COPY scripts/patch-nitro-windows.ts ./scripts/patch-nitro-windows.ts
 
 RUN pnpm install --frozen-lockfile
 
@@ -49,6 +52,7 @@ COPY composables ./composables
 COPY i18n ./i18n
 COPY layouts ./layouts
 COPY middleware ./middleware
+COPY mcp ./mcp
 COPY pages ./pages
 COPY plugins ./plugins
 COPY providers ./providers

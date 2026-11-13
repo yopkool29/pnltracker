@@ -131,7 +131,7 @@
 import '@milkdown/crepe/theme/common/style.css'
 import '@milkdown/crepe/theme/frame.css'
 import { Crepe } from '@milkdown/crepe'
-import { normalizeColorToHex } from '~/utils/dashboard'
+import { normalizeColorToHex } from '~/utils/chartFormat'
 import { textColorPlugin } from '~/utils/milkdown/textColorMark'
 import { textColorIcon } from '~/utils/milkdown/icons'
 

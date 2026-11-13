@@ -47,6 +47,9 @@ website/
 # plugins
 plugins-dev/_release/
 
+# CEF release artifacts
+release-cef/
+
 # Old/deprecated components
 old/
 components/dashboard/charts/old/
@@ -62,3 +65,4 @@ src-tauri/gen/
 # Vendored binaries (PostgreSQL, etc.)
 vendor/
 docs/dev/BUILD_RELEASE.md
+docker-compose.override.yml

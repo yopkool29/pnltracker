@@ -26,7 +26,7 @@ type SpgnAlias = {
 // Read the 'spgn' custom field from a symbol's metadata, if defined.
 // This is the explicit Polygon ticker alias for symbols that don't map automatically.
 // Optional prefix (e.g. "ft:MYM") forces the instrument type used for API routing.
-export const getSpgnAlias = (symbolConfig: SymbolType | undefined): SpgnAlias | null => {
+const getSpgnAlias = (symbolConfig: SymbolType | undefined): SpgnAlias | null => {
     const customFields = symbolConfig?.metadata?.customFields
     if (!customFields) return null
     const raw = customFields.find(f => f.key === 'spgn')?.value

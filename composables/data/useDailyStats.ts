@@ -3,7 +3,7 @@ import type { TradeExtendedType } from '~/schema/trade'
 import { formatDateToYYYYMMDD } from '~/utils/date-utils'
 
 export type TradeGroup = { key: string; count: number; day: Date; trades: TradeExtendedType[]; pnl: number; commission: number }
-export type TradeGroups = { [key: string]: TradeGroup }
+type TradeGroups = { [key: string]: TradeGroup }
 
 // Compute per-day trade groups for a given month from a flat list of trades.
 // Trades are pre-indexed by day in a single O(n) pass, then each day of the

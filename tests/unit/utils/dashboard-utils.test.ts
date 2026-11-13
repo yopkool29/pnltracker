@@ -1,18 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { TradeType } from '~/schema/trade'
-import {
-	getWeekNumber,
-	formatDateByMode,
-	getPeriodDates,
-	groupTradesByPeriod,
-	periodTranslations,
-	periodOptions,
-	generateIntradayPnlChartData,
-	generateCumulatedPnlChartData,
-	generateApptChartData,
-	generatePlRatioChartData,
-	generateWinrateChartData
-} from '~/utils/dashboard'
+import { getWeekNumber, formatDateByMode, getPeriodDates, groupTradesByPeriod, periodTranslations, periodOptions } from '~/utils/dashboardPeriods'
+import { generateIntradayPnlChartData } from '~/utils/chartData'
 
 const mockTrades = [
 	{ closeDate: '2024-01-15T11:00:00Z', profit: 100, netProfit: 95, lot: 1, openDate: '2024-01-15T10:00:00Z' },
@@ -149,60 +138,4 @@ describe('dashboard utils', () => {
 		})
 	})
 
-	describe('generateCumulatedPnlChartData', () => {
-		it('should return chart data structure', () => {
-			const result = generateCumulatedPnlChartData(mockTrades as unknown as TradeType[], 'day', true, null)
-			expect(result).toHaveProperty('labels')
-			expect(result).toHaveProperty('datasets')
-			expect(Array.isArray(result.labels)).toBe(true)
-			expect(Array.isArray(result.datasets)).toBe(true)
-			expect(result.datasets.length).toBe(2)
-		})
-
-		it('should return empty data for no trades', () => {
-			const result = generateCumulatedPnlChartData([], 'day', true, null)
-			expect(result.labels.length).toBe(0)
-			expect(result.datasets[0].data.length).toBe(0)
-		})
-	})
-
-	describe('generateApptChartData', () => {
-		it('should return chart data structure', () => {
-			const result = generateApptChartData(mockTrades as unknown as TradeType[], 'day', 3, true, null)
-			expect(result).toHaveProperty('labels')
-			expect(result).toHaveProperty('datasets')
-			expect(Array.isArray(result.datasets)).toBe(true)
-		})
-
-		it('should return empty data for no trades', () => {
-			const result = generateApptChartData([], 'day', 3, true, null)
-			expect(result.labels.length).toBe(0)
-		})
-	})
-
-	describe('generatePlRatioChartData', () => {
-		it('should return chart data structure', () => {
-			const result = generatePlRatioChartData(mockTrades as unknown as TradeType[], 'day', 3, null)
-			expect(result).toHaveProperty('labels')
-			expect(result).toHaveProperty('datasets')
-		})
-
-		it('should return empty data for no trades', () => {
-			const result = generatePlRatioChartData([], 'day', 3, null)
-			expect(result.labels.length).toBe(0)
-		})
-	})
-
-	describe('generateWinrateChartData', () => {
-		it('should return chart data structure', () => {
-			const result = generateWinrateChartData(mockTrades as unknown as TradeType[], 'day', 3, true, null)
-			expect(result).toHaveProperty('labels')
-			expect(result).toHaveProperty('datasets')
-		})
-
-		it('should return empty data for no trades', () => {
-			const result = generateWinrateChartData([], 'day', 3, true, null)
-			expect(result.labels.length).toBe(0)
-		})
-	})
 })

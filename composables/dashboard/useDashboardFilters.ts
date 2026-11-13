@@ -1,7 +1,7 @@
 import type { ComputedRef, Ref } from 'vue'
 import type { TradeFilter } from '~/type'
 import { formatDateToYYYYMMDD } from '~/utils/date-utils'
-import { getPeriodDates } from '~/utils/dashboard'
+import { getPeriodDates } from '~/utils/dashboardPeriods'
 
 type ApplyFilters = () => Promise<unknown>
 type FilterChangeHandler = () => unknown

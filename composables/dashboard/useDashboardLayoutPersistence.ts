@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue'
 import type { ChartKey, DashboardGridItem, SectionKey, WorkspaceConfig } from '~/type'
-import type { GridTemplateItem } from '~/utils/dashboard'
+import type { GridTemplateItem } from '~/utils/dashboardGrid'
 import type { DashboardBreakpoint } from '~/composables/dashboard/useDashboardGridLayout'
 
 type GridLayoutRef = {
@@ -25,7 +25,10 @@ export const useDashboardLayoutPersistence = (
 				if (item.i in activeSectionVisibility.value) return !activeSectionVisibility.value[item.i as SectionKey]
 				return false
 			})
-			.map(item => ({ ...item, x: 0, y: 0 }))
+			.map((item) => {
+				const { atTop: _atTop, ...gridItem } = item
+				return { ...gridItem, x: 0, y: 0 }
+			})
 		const saved = [...newLayout, ...hiddenItems]
 		switch (currentBreakpoint.value) {
 			case 'md':

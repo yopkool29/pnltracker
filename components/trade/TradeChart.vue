@@ -15,6 +15,7 @@
             <UCheckbox v-model="showAdjacent" :label="$t('components.trade.chart.show_adjacent')" size="xs" @update:model-value="onAdjacentToggle" />
             <UCheckbox v-if="showAdjacent" v-model="showAdjacentLines" :label="$t('components.trade.chart.show_adjacent_lines')" size="xs" @update:model-value="onAdjacentLinesToggle" />
             <UCheckbox v-model="showRth" :label="$t('components.trade.chart.show_rth')" size="xs" @update:model-value="onRthToggle" />
+            <UCheckbox v-model="forceDark" :label="$t('components.trade.chart.dark_mode')" size="xs" :disabled="isDark" />
             <UButton icon="i-heroicons-arrow-path" size="xs" color="neutral" variant="ghost" :loading="loading" @click="onReload" />
             <span v-if="loading" class="text-secondary-sm text-muted">
                 <UIcon name="i-heroicons-arrow-path" class="animate-spin inline" />
@@ -109,7 +110,9 @@ const tfOptions = [
     { label: 'Daily', value: '1440' },
 ]
 const dbStateStore = useDbStateStore()
-const { tradeChartTf: selectedTf, tradeChartShowAdjacent: showAdjacent, tradeChartShowAdjacentLines: showAdjacentLines, dailyFilters } = storeToRefs(dbStateStore)
+const { tradeChartTf: selectedTf, tradeChartShowAdjacent: showAdjacent, tradeChartShowAdjacentLines: showAdjacentLines, tradeChartForceDark: forceDark, dailyFilters } = storeToRefs(dbStateStore)
+
+const chartDark = computed(() => forceDark.value || isDark.value)
 
 let chart: ReturnType<typeof createChart> | null = null
 let candlestickSeries: ISeriesApi<'Candlestick'> | null = null
@@ -155,7 +158,7 @@ const { fetchBars, refetchBars } = usePolygonBars(polygonSymbol, props.trade, fo
 
 const updateChartColors = () => {
     if (!chart || !candlestickSeries) return
-    const colors = getChartColors()
+    const colors = getChartColors(chartDark.value)
     chart.applyOptions({
         layout: { background: colors.background, textColor: colors.textColor },
         grid: { vertLines: { color: colors.gridColor }, horzLines: { color: colors.gridColor } },
@@ -196,7 +199,7 @@ const centerOnTrade = (data: PolygonBar[]) => {
 
 const addTradeMarkers = (data: PolygonBar[]) => {
     if (!candlestickSeries || data.length === 0) return
-    const colors = getChartColors()
+    const colors = getChartColors(chartDark.value)
     const entryColor = props.trade.type === 'buy' ? colors.buyColor : colors.sellColor
     const exitColor = props.trade.type === 'buy' ? colors.sellColor : colors.buyColor
     const entryTs = Math.floor(new Date(props.trade.openDate).getTime() / 1000)
@@ -207,7 +210,7 @@ const addTradeMarkers = (data: PolygonBar[]) => {
     const exitIdx = findBarIndex(data, exitTs)
     const entryTime = data[entryIdx].time as UTCTimestamp
     const exitTime = data[exitIdx].time as UTCTimestamp
-    const monoColor = isDark.value ? '#ffffff' : '#000000'
+    const monoColor = chartDark.value ? '#ffffff' : '#000000'
 
     const markers: Array<{
         time: Time
@@ -368,7 +371,7 @@ const initChart = async () => {
         return
     }
 
-    const colors = getChartColors()
+    const colors = getChartColors(chartDark.value)
 
     chart = createChart(chartContainer.value, {
         layout: { background: colors.background, textColor: colors.textColor },
@@ -556,5 +559,5 @@ const onAdjacentToggle = (val: boolean | 'indeterminate') => {
     }
 }
 
-watch(() => colorMode.value, () => updateChartColors())
+watch([() => colorMode.value, forceDark], () => updateChartColors())
 </script>

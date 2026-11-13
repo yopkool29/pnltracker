@@ -1,9 +1,10 @@
 import { PrismaClient as AuthPrismaClient } from '~/generated/prisma-auth'
 import { PrismaClient as DataPrismaClient } from '~/generated/prisma-data'
-import { getScreenshotUploadPath } from './index'
+import { getScreenshotUploadPath, getUploadPath } from './index'
 import { createAppError } from './errors'
-import { mkdir } from 'fs/promises'
+import { mkdir, rm } from 'fs/promises'
 import { existsSync } from 'fs'
+import { join } from 'path'
 
 // Singleton instance for Auth database
 let authDbInstance: AuthPrismaClient | null = null
@@ -245,6 +246,47 @@ export const createUserDatabase = async (
     return database
 }
 
+
+// Suppression complète d'une base utilisateur : schéma + rôle + record + dossiers.
+// Partagé entre delete DB et restore-all (process #236).
+// Throw si le DROP échoue : un schéma partiellement droppé corromprait un restore ultérieur.
+export const wipeUserDatabase = async (userId: number, dbName: string) => {
+    const authDb = getAuthDb()
+    const schemaName = buildShemaName(userId, dbName)
+    const roleName = buildRoleName(userId, dbName)
+
+    await authDb.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`)
+    await authDb.$executeRawUnsafe(`DROP ROLE IF EXISTS "${roleName}"`)
+
+    // Le client caché pointerait sur un schéma droppé
+    dataDbCache.delete(schemaName)
+
+    const existing = await authDb.database.findFirst({
+        where: { userId, name: dbName },
+    })
+    if (existing) {
+        await authDb.database.delete({ where: { id: existing.id } })
+    }
+
+    // Dossiers en best-effort : la base est déjà supprimée en DB
+    const uploadPath = join(process.cwd(), getUploadPath(userId, dbName))
+    if (existsSync(uploadPath)) {
+        try {
+            await rm(uploadPath, { recursive: true, force: true })
+        } catch (error) {
+            console.error(`Failed to delete upload directory for "${dbName}":`, error)
+        }
+    }
+
+    const exportPath = join(process.cwd(), 'temp', 'exports', `user_${userId}`, `db_${dbName}`)
+    if (existsSync(exportPath)) {
+        try {
+            await rm(exportPath, { recursive: true, force: true })
+        } catch (error) {
+            console.error(`Failed to delete export directory for "${dbName}":`, error)
+        }
+    }
+}
 
 export const validateSchemaExists = async (userId: number, dbName: string): Promise<void> => {
     const authDb = getAuthDb()

@@ -17,4 +17,5 @@
 </template>
 
 <script setup lang="ts">
+useExternalLinks()
 </script>

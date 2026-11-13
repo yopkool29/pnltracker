@@ -1,7 +1,7 @@
 <template>
     <header v-show="!hideHeader"
         class="w-full shadow text-default select-none sticky top-0 z-40 transition-all duration-200"
-        :class="scrolled ? (isTauriLinux ? 'bg-default' : 'bg-default/80 backdrop-blur-md') : 'bg-default'">
+        :class="scrolled ? (isWebkitGtk ? 'bg-default' : 'bg-default/80 backdrop-blur-md') : 'bg-default'">
         <div>
             <div class="header-navbar">
             <div class="container mx-auto flex justify-between items-center px-4"
@@ -251,6 +251,9 @@ const { languageLoading, toggleLanguage } = useLanguageSwitcher()
 const mobileMenuOpen = ref(false)
 const scrolled = ref(false)
 const isTauriLinux = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window && navigator.userAgent.includes('Linux')
+// WebKitGTK ne gère pas backdrop-filter correctement -> fond opaque.
+// Sous CEF (Chromium, "Chrome" dans l'UA) le blur reste actif.
+const isWebkitGtk = isTauriLinux && !navigator.userAgent.includes('Chrome')
 
 let scrollParent: HTMLElement | null = null
 

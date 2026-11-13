@@ -4,6 +4,7 @@ export interface Database {
     displayName: string
     isDefault: boolean
     createdAt: string
+    metadata?: Record<string, unknown> | null
 }
 
 const DB_STORAGE_KEY = 'currentDatabase'
@@ -38,6 +39,13 @@ export const useDatabase = () => {
         try {
             const data = await $fetch('/api/database/list')
             databases.value = data
+            // Boot : restaure le uiState de la DB courante (persistée en localStorage)
+            if (currentDatabase.value) {
+                const current = data.find((db: Database) => db.id === currentDatabase.value!.id)
+                if (current?.metadata) {
+                    useUiStateSync().restoreUiState(current.metadata, current.name)
+                }
+            }
             return data
         } catch (error) {
             console.error('Failed to fetch databases:', error)
@@ -61,12 +69,22 @@ export const useDatabase = () => {
 
     const selectDatabase = async (databaseId: number, skipTags = false) => {
         try {
+            // Sauvegarde le uiState de l'ancienne DB avant le switch
+            if (currentDatabase.value) {
+                await useUiStateSync().saveUiState()
+            }
+
             const data = await $fetch('/api/database/select', {
                 method: 'POST',
                 body: { databaseId }
             })
 
             currentDatabase.value = data
+
+            // Restaure le uiState de la nouvelle DB (depuis database.metadata)
+            if (data.metadata) {
+                useUiStateSync().restoreUiState(data.metadata, data.name)
+            }
 
             reloadActivePlugins()
 

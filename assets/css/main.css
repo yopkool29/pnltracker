@@ -60,6 +60,9 @@ body {
     /* Restaurer la couleur de texte par défaut en mode dark */
     --ui-text-highlighted: var(--ui-color-neutral-100);
     --ui-text: var(--ui-color-neutral-200);
+    /* Rehausser dimmed/muted (icônes d'inputs, textes secondaires) */
+    --ui-text-dimmed: var(--ui-color-neutral-400);
+    --ui-text-muted: var(--ui-color-neutral-300);
 }
 
 html.light-blue {
@@ -182,6 +185,22 @@ select {
     user-select: all;
 }
 
+/* Neutraliser le style autofill du navigateur (fond kaki/olive en dark,
+   Chromium + Firefox) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:autofill,
+input:autofill:hover,
+input:autofill:focus {
+    -webkit-text-fill-color: var(--ui-text);
+    text-fill-color: var(--ui-text);
+    -webkit-box-shadow: 0 0 0 1000px var(--ui-bg-elevated) inset;
+    box-shadow: 0 0 0 1000px var(--ui-bg-elevated) inset;
+    caret-color: var(--ui-text);
+    transition: background-color 9999s ease-in-out 0s;
+}
+
 .log-normal-text {
     @apply text-highlighted;
 }
@@ -212,6 +231,23 @@ select {
 /* Fix pour les tooltips qui ne fonctionnent pas avec les modales */
 .tooltip-content {
     z-index: 9999 !important;
+}
+
+/* Modales empilées : seul le premier overlay assombrit le fond —
+   les overlays suivants (enfants directs de body, dans l'ordre
+   d'ouverture) sont transparents pour éviter l'assombrissement cumulatif. */
+body > .app-modal-overlay ~ .app-modal-overlay {
+    background-color: transparent;
+}
+
+/* Light mode (light et light-blue) : assombrissement plus léger que
+   le bg-black/50 du slot — même règle d'empilement, spécificité
+   identique pour que la transparence reste prioritaire. */
+html:not(.dark) body > .app-modal-overlay {
+    background-color: rgb(0 0 0 / 0.15);
+}
+html:not(.dark) body > .app-modal-overlay ~ .app-modal-overlay {
+    background-color: transparent;
 }
 
 /* S'assurer que les tooltips sont visibles même après fermeture des modales */

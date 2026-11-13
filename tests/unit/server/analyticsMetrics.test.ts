@@ -94,6 +94,19 @@ describe('analyticsMetrics', () => {
 		expect(calculateAnalyticsBreakdown(trades, 'net', 'month').groups.map(group => group.key).sort()).toEqual(['2024-01', '2024-02'])
 	})
 
+	it('groups *_close dimensions by closeDate while defaults keep openDate', () => {
+		// Ouvert dimanche 30 juin 23h UTC, clôturé mardi 2 juillet 02h UTC
+		const spanTrade = makeTrade({ id: 5, openDate: '2024-06-30T23:00:00Z', closeDate: '2024-07-02T02:00:00Z', profit: 50, netProfit: 40, symbol: 'TSLA', type: 'buy' })
+		const keys = (dimension: Parameters<typeof calculateAnalyticsBreakdown>[2]) =>
+			calculateAnalyticsBreakdown([spanTrade], 'net', dimension).groups.map(group => group.key)
+		expect(keys('month')).toEqual(['2024-06'])
+		expect(keys('month_close')).toEqual(['2024-07'])
+		expect(keys('weekday')).toEqual(['0'])
+		expect(keys('weekday_close')).toEqual(['2'])
+		expect(keys('open_hour')).toEqual(['23h'])
+		expect(keys('close_hour')).toEqual(['02h'])
+	})
+
 	it('aggregates realized PnL into UTC intervals and accumulates chronologically', () => {
 		const series = calculatePnlTimeseries(trades, 'net', 'week')
 		expect(series.points.map(point => ({ date: point.date, pnl: point.pnl, cumulative: point.cumulative_pnl }))).toEqual([

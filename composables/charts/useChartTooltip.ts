@@ -4,7 +4,7 @@ import type { BreakdownMetrics } from '~/composables/analytics/breakdownMetrics'
 import { formatMetricValueForMetric } from '~/composables/analytics/breakdownMetrics'
 import { buildTooltipLines } from '~/composables/charts/useTooltipMetrics'
 
-export interface TooltipConfig {
+interface TooltipConfig {
 	backgroundColor: string
 	borderColor: string
 	textColor: string

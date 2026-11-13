@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-	getTotalTradingDays,
-	countBusinessDays,
-	getBusinessDaysFromTrades,
-	getWinningWeeksPercent,
-	getWinningMonthsPercent,
-} from '~/utils/dashboard'
+import { getTotalTradingDays, countBusinessDays, getBusinessDaysFromTrades, getWinningWeeksPercent, getWinningMonthsPercent } from '~/utils/dailyStats'
 import type { TradeExtendedType } from '~/schema/trade'
 
 // Mock trades répartis sur plusieurs jours/semaines/mois

@@ -9,11 +9,6 @@ export interface StorageFile {
     retrieved: boolean
 }
 
-export interface StorageListResponse {
-    count: number
-    files: StorageFile[]
-}
-
 export const useStorageServer = () => {
     const userStore = useUserStore()
     const { log_error } = useLogView()

@@ -1,6 +1,9 @@
 import {
+	groupByDayOfWeekClose,
 	groupByDayOfWeekOpen,
+	groupByHourEnd,
 	groupByHourStart,
+	groupByMonthYearClose,
 	groupByMonthYearOpen,
 	groupBySide,
 	groupByTag,
@@ -103,6 +106,9 @@ const getDimensionGroup = (dimension: AnalyticsDimension): GroupFn => {
 		month: groupByMonthYearOpen(utcTimezoneSettings),
 		weekday: groupByDayOfWeekOpen(utcTimezoneSettings),
 		open_hour: groupByHourStart(utcTimezoneSettings),
+		month_close: groupByMonthYearClose(utcTimezoneSettings),
+		weekday_close: groupByDayOfWeekClose(utcTimezoneSettings),
+		close_hour: groupByHourEnd(utcTimezoneSettings),
 	}
 	return groups[dimension]
 }

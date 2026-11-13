@@ -1,11 +1,12 @@
 import type { SectionKey } from '~/type'
 
-export interface SectionRegistration {
+interface SectionRegistration {
 	id: SectionKey
 	defaultVisible: boolean
 }
 
 const sectionRegistry: SectionRegistration[] = [
+	{ id: 'metricsCards', defaultVisible: true },
 	{ id: 'allTrades', defaultVisible: true },
 	{ id: 'profitTrades', defaultVisible: true },
 	{ id: 'losingTrades', defaultVisible: true },

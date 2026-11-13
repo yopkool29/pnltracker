@@ -1,0 +1,18 @@
+diff --git a/dist/config.mjs b/dist/config.mjs
+index 770ef4ef680f6b1b60445e4e0a3e20af3b2e4daa..43fb9c0376d5a672cecfd1c5ec2237e57ec28e31 100644
+--- a/dist/config.mjs
++++ b/dist/config.mjs
+@@ -214,6 +214,13 @@ async function getVitestConfigFromNuxt(options, loadNuxtOptions = {}) {
+       }
+     }
+   );
++  // defu cannot merge the object-form alias override with Nuxt's array-form
++  // resolve.alias (mismatched types replace wholesale) — merge both manually.
++  if (options.viteConfig?.resolve?.alias) {
++    const toEntries = (a) => Array.isArray(a) ? a : Object.entries(a || {}).map(([find, replacement]) => ({ find, replacement }));
++    resolvedConfig.resolve = resolvedConfig.resolve || {};
++    resolvedConfig.resolve.alias = [...toEntries(resolvedConfig.resolve.alias), ...toEntries(options.viteConfig.resolve.alias)];
++  }
+   delete resolvedConfig.define["process.browser"];
+   delete resolvedConfig.customLogger;
+   if (!Array.isArray(resolvedConfig.test.setupFiles)) {

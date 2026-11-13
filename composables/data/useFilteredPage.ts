@@ -1,6 +1,6 @@
 import type { TradeFilter } from '~/type'
 
-export type FilterPageType = 'dashboard' | 'daily' | 'calendar'
+type FilterPageType = 'dashboard' | 'daily' | 'calendar'
 
 interface UseFilteredPageOptions {
 	pageType: FilterPageType

@@ -1,4 +1,4 @@
-import { getDetailedError } from '~/utils';
+import { getDetailedError } from '~/utils/errorHelpers'
 import type { ErrorMessage } from '~/type'
 import { type UserType, defaultSettings } from '~/schema/user'
 
@@ -18,11 +18,6 @@ export const useAuth = () => {
         })
         const userSettings = JSON.parse(res.settings || '{}')
         userStore.setUser({ ...res, settings_object: { ...defaultSettings, ...userSettings } })
-
-        if (res.metadata) {
-            const { restoreUiState } = useUiStateSync()
-            restoreUiState(res.metadata)
-        }
 
         return res
     }
@@ -44,15 +39,10 @@ export const useAuth = () => {
 
     const fetchUser = async (headers?: {
         cookie?: string | undefined;
-    }, options?: { skipUiStateRestore?: boolean }): Promise<UserType> => {
+    }): Promise<UserType> => {
         const res = await $fetch('/api/auth', { headers })
         const userSettings = JSON.parse(res.settings || '{}')
         const userData = { ...res, settings_object: { ...defaultSettings, ...userSettings } }
-
-        if (import.meta.client && res.metadata && !options?.skipUiStateRestore) {
-            const { restoreUiState } = useUiStateSync()
-            restoreUiState(res.metadata)
-        }
 
         return userData
     }

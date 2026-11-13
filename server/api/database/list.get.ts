@@ -30,7 +30,9 @@ export default defineEventHandler(async (event) => {
             displayName: db.displayName,
             isDefault: db.isDefault,
             createdAt: db.createdAt,
-            migrationVersion: db.migrationVersion
+            updatedAt: db.updatedAt,
+            migrationVersion: db.migrationVersion,
+            metadata: db.metadata
         }))
     } catch (error) {
         const err = error as { statusCode?: number; data?: { tag?: string } }

@@ -185,7 +185,7 @@ import type { TradeExtendedType } from '~/schema/trade'
 import type { SettingsContentType } from '~/schema/user'
 import { useUserStore } from '~/stores/user'
 import type { TradeFilter } from '~/type'
-import { OPERATOR_EQUAL } from '~/utils'
+import { OPERATOR_EQUAL } from '~/utils/filter-utils'
 import { useCalendarGrid } from '~/composables/ui/useCalendarGrid'
 
 const { formatCurrency } = useUtils()

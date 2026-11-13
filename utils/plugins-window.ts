@@ -52,21 +52,6 @@ export const getPlugin = (pluginId: string): TJPlugin | undefined => {
     return (window as unknown as { [key: string]: TJPlugin })[pluginId]
 }
 
-// Set plugin on window
-export const setPlugin = (pluginId: string, plugin: TJPlugin) => {
-    if (typeof window === 'undefined') return
-
-    ;(window as unknown as { [key: string]: TJPlugin })[pluginId] = plugin
-}
-
-// Remove plugin from window
-export const removePlugin = (pluginId: string) => {
-    if (typeof window === 'undefined') return
-
-    ;(window as unknown as { [key: string]: TJPlugin | undefined })[pluginId] =
-        undefined
-}
-
 // Dispatch plugin load event
 export const dispatchPluginLoadEvent = (pluginId: string) => {
     if (typeof window === 'undefined') return
@@ -149,34 +134,6 @@ export const addPluginPageSlot = (
     window.__TJ_PLUGIN_PAGE_SLOTS__ = pluginPageSlots.value
 }
 
-// Get plugin actions
-export const getPluginActions = () => {
-    if (typeof window === 'undefined') return []
-
-    return window.__TJ_PLUGIN_ACTIONS__
-}
-
-// Get plugin modals
-export const getPluginModals = () => {
-    if (typeof window === 'undefined') return []
-
-    return window.__TJ_PLUGIN_MODALS__
-}
-
-// Get plugin page slots
-export const getPluginPageSlots = () => {
-    if (typeof window === 'undefined') return []
-
-    return window.__TJ_PLUGIN_PAGE_SLOTS__
-}
-
-// Find plugin action by id
-export const findPluginAction = (actionId: string) => {
-    if (typeof window === 'undefined') return undefined
-
-    return window.__TJ_PLUGIN_ACTIONS__.find((a) => a.id === actionId)
-}
-
 // Find plugin modal by id
 export const findPluginModal = (modalId: string) => {
     if (typeof window === 'undefined') return undefined
@@ -191,9 +148,4 @@ export const findPluginActionsByPluginId = (pluginId: string) => {
     return window.__TJ_PLUGIN_ACTIONS__.filter((a) => a.id.startsWith(pluginId))
 }
 
-// Find plugin modals starting with plugin id
-export const findPluginModalsByPluginId = (pluginId: string) => {
-    if (typeof window === 'undefined') return []
 
-    return window.__TJ_PLUGIN_MODALS__.filter((m) => m.id.startsWith(pluginId))
-}

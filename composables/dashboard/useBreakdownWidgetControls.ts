@@ -1,7 +1,7 @@
 import type { ComputedRef } from 'vue'
 import type { BreakdownConfig, BreakdownDimension, BreakdownMetric, TradeProperty } from '~/type'
 import type { TradeExtendedType } from '~/schema/trade'
-import { defaultTableColumns, dimensionOptions, metricOptions } from '~/composables/dashboard/useBreakdownConfig'
+import { defaultTableColumns, dimensionOptions, metricOptions } from '~/composables/dashboard/breakdownTemplates'
 
 type ConfigUpdater = (patch: Partial<BreakdownConfig>) => void
 
