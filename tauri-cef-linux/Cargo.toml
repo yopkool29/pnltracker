@@ -1,6 +1,6 @@
 [package]
 name = "pnltracker-desktop-cef"
-version = "0.1.3"
+version = "0.1.4"
 description = "PnlTracker desktop application (CEF runtime)"
 authors = ["PnlTracker"]
 license = ""
